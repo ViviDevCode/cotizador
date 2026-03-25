@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cotizador · Agencia Digital</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<style>
+*, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+html { scroll-behavior:smooth; }
+
+:root {
+  --navy:   #0b1e3d;
+  --navy2:  #0d2347;
+  --cream:  #eeeef0;
+  --warm:   #f5f5f7;
+  --accent: #c8a96e;
+  --accent2:#dfc08e;
+  --muted:  #7a7060;
+  --border: rgba(11,30,61,0.09);
+  --text:   #1a1a1a;
+}
+
+body { font-family:'DM Sans',sans-serif; background:var(--cream); color:var(--text); min-height:100vh; font-size:14px; line-height:1.65; }
+
+/* ── HEADER ── */
+header {
+  position:fixed; top:0; left:0; width:100%; height:68px;
+  background:rgba(11,30,61,0.97); backdrop-filter:blur(14px);
+  display:flex; align-items:center; justify-content:space-between;
+  padding:0 52px; z-index:1000;
+  border-bottom:1px solid rgba(255,255,255,0.05);
+  transition:transform .3s ease;
+}
+header.hidden { transform:translateY(-100%); }
+.logo { font-family:'Playfair Display',serif; color:white; font-size:1.3rem; letter-spacing:.05em; text-decoration:none; }
+.logo em { color:var(--accent); font-style:italic; }
+nav a { color:rgba(255,255,255,.6); text-decoration:none; font-size:.78rem; font-weight:500; letter-spacing:.1em; text-transform:uppercase; margin-left:28px; transition:color .2s; }
+nav a:hover { color:var(--accent); }
+.menu-toggle { display:none; color:white; font-size:1.3rem; cursor:pointer; }
+@media(max-width:700px){ header{padding:0 20px;} nav{display:none;} .menu-toggle{display:block;} }
+
+/* ── HERO ── */
+.hero {
+  background:var(--navy);
+  padding:calc(68px + 4.5rem) 52px 4rem;
+  text-align:center; position:relative; overflow:hidden;
+}
+.hero::before {
+  content:''; position:absolute; inset:0;
+  background:radial-gradient(ellipse 70% 60% at 20% 50%,rgba(200,169,110,.07) 0%,transparent 70%),
+             radial-gradient(ellipse 50% 80% at 80% 20%,rgba(200,169,110,.04) 0%,transparent 60%);
+  pointer-events:none;
+}
+.hero::after { content:''; position:absolute; left:0; bottom:0; width:100%; height:1px; background:linear-gradient(90deg,transparent,rgba(200,169,110,.3),transparent); }
+.badge { display:inline-block; font-size:.7rem; font-weight:700; letter-spacing:.2em; text-transform:uppercase; color:var(--accent); border:1px solid rgba(200,169,110,.3); padding:5px 16px; border-radius:100px; margin-bottom:20px; }
+.hero h1 { font-family:'Playfair Display',serif; font-size:clamp(2rem,4.5vw,3.2rem); font-weight:700; color:white; letter-spacing:-.02em; line-height:1.15; margin-bottom:14px; }
+.hero h1 em { color:var(--accent); font-style:italic; }
+.hero p { color:rgba(255,255,255,.45); font-size:.95rem; font-weight:300; max-width:440px; margin:0 auto; }
+
+/* ── WRAP ── */
+.cotiz-wrap { max-width:1020px; margin:0 auto; padding:3.5rem 24px 80px; }
+
+/* ── STEPPER ── */
+.pasos { display:flex; align-items:center; justify-content:center; gap:0; margin-bottom:3rem; }
+.paso { display:flex; align-items:center; gap:9px; font-size:.72rem; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); transition:color .3s; }
+.paso.activo { color:var(--navy); }
+.paso.completado { color:var(--accent); }
+.paso-num { width:30px; height:30px; border-radius:50%; border:2px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:.78rem; font-weight:700; background:white; color:var(--muted); transition:all .3s; flex-shrink:0; }
+.paso.activo .paso-num { border-color:var(--navy); background:var(--navy); color:white; }
+.paso.completado .paso-num { border-color:var(--accent); background:var(--accent); color:var(--navy); }
+.paso span { display:none; }
+@media(min-width:520px){ .paso span { display:block; } }
+.paso-linea { flex:1; max-width:60px; height:2px; background:var(--border); border-radius:2px; margin:0 6px; transition:background .3s; }
+.paso-linea.on { background:var(--accent); }
+
+/* ── CARD ── */
+.cotiz-card { background:white; border:1px solid var(--border); border-radius:16px; padding:2.2rem 2.4rem; margin-bottom:1.5rem; box-shadow:0 4px 24px rgba(11,30,61,.07); }
+.cotiz-card h2 { font-family:'Playfair Display',serif; font-size:1.4rem; font-weight:600; color:var(--navy); margin-bottom:5px; }
+.cotiz-card .sub { font-size:.86rem; color:var(--muted); margin-bottom:2rem; }
+
+/* ── OPCIONES TIPO ── */
+.opciones-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:1rem; }
+.opcion { border:1.5px solid var(--border); border-radius:12px; padding:1.4rem; cursor:pointer; background:var(--cream); position:relative; transition:all .2s; }
+.opcion:hover { border-color:var(--navy); background:white; transform:translateY(-2px); box-shadow:0 8px 24px rgba(11,30,61,.09); }
+.opcion.sel { border-color:var(--navy); background:white; box-shadow:0 6px 24px rgba(11,30,61,.1); }
+.opcion.sel::after { content:'✓'; position:absolute; top:12px; right:12px; width:22px; height:22px; border-radius:50%; background:var(--navy); color:white; font-size:.72rem; font-weight:700; display:flex; align-items:center; justify-content:center; }
+.op-icono { margin-bottom:10px; }
+.op-nombre { font-size:.92rem; font-weight:600; color:var(--navy); margin-bottom:4px; }
+.op-desc { font-size:.78rem; color:var(--muted); line-height:1.55; }
+.op-precio { font-size:.78rem; color:var(--accent); font-weight:700; margin-top:10px; }
+
+/* ── EXTRAS ── */
+.extras-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:.8rem; }
+.extra { display:flex; align-items:center; gap:12px; border:1.5px solid var(--border); border-radius:10px; padding:1rem 1.2rem; cursor:pointer; background:var(--cream); transition:all .2s; }
+.extra:hover { border-color:var(--navy); background:white; }
+.extra.sel { border-color:var(--accent); background:white; }
+.extra-check { width:20px; height:20px; border-radius:5px; border:2px solid var(--border); flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:.7rem; color:white; transition:all .2s; }
+.extra.sel .extra-check { background:var(--accent); border-color:var(--accent); }
+.extra-txt { flex:1; }
+.extra-txt strong { font-size:.88rem; color:var(--navy); display:block; margin-bottom:2px; }
+.extra-txt span { font-size:.76rem; color:var(--muted); }
+.extra-precio { font-size:.82rem; font-weight:700; color:var(--accent); white-space:nowrap; }
+
+/* ── PLAZO ── */
+.plazo-opts { display:grid; grid-template-columns:repeat(4,1fr); gap:.8rem; }
+.plazo-opt { border:1.5px solid var(--border); border-radius:10px; padding:1.1rem 1rem; cursor:pointer; background:var(--cream); text-align:center; transition:all .2s; }
+.plazo-opt:hover { border-color:var(--navy); background:white; }
+.plazo-opt.sel { border-color:var(--navy); background:white; box-shadow:0 4px 16px rgba(11,30,61,.09); }
+.plazo-opt strong { font-size:.9rem; color:var(--navy); display:block; margin-bottom:4px; }
+.plazo-opt span { font-size:.76rem; color:var(--muted); }
+.plazo-opt .urgente { font-size:.72rem; color:#c0392b; font-weight:700; margin-top:6px; display:block; }
+
+/* ── RESUMEN DARK ── */
+.resumen-card { background:var(--navy); border-radius:16px; padding:2rem 2.2rem; margin-bottom:1.5rem; position:relative; overflow:hidden; box-shadow:0 8px 32px rgba(11,30,61,.18); }
+.resumen-card::before { content:''; position:absolute; inset:0; background:linear-gradient(135deg,rgba(200,169,110,.08) 0%,transparent 55%); pointer-events:none; }
+.resumen-card::after { content:''; position:absolute; bottom:0; left:0; width:100%; height:2px; background:linear-gradient(90deg,var(--accent),transparent); }
+.resumen-titulo { font-family:'Playfair Display',serif; font-size:1.15rem; color:white; margin-bottom:1.4rem; }
+.resumen-items { list-style:none; margin-bottom:1.4rem; }
+.resumen-items li { display:flex; justify-content:space-between; align-items:center; padding:.55rem 0; border-bottom:1px solid rgba(255,255,255,.07); font-size:.86rem; }
+.resumen-items li:last-child { border:none; }
+.resumen-items li .r-label { color:rgba(255,255,255,.55); }
+.resumen-items li .r-val { color:white; font-weight:600; }
+.resumen-total { display:flex; justify-content:space-between; align-items:baseline; padding-top:1rem; border-top:1px solid rgba(200,169,110,.3); }
+.resumen-total .t-label { font-size:.78rem; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:rgba(255,255,255,.45); }
+.resumen-total .t-amount { font-family:'Playfair Display',serif; font-size:2rem; color:var(--accent); font-weight:700; }
+
+/* ── FORM ── */
+.form-grid { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+.form-group { display:flex; flex-direction:column; gap:7px; }
+.form-group.full { grid-column:1/-1; }
+.form-group label { font-size:.7rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }
+.form-group input, .form-group textarea {
+  background:var(--cream); border:1.5px solid var(--border); border-radius:8px;
+  padding:12px 14px; font-family:'DM Sans',sans-serif; font-size:13.5px;
+  color:var(--text); outline:none; transition:border-color .2s, box-shadow .2s; width:100%; resize:vertical;
+}
+.form-group input::placeholder, .form-group textarea::placeholder { color:var(--muted); opacity:.7; }
+.form-group input:focus, .form-group textarea:focus { border-color:var(--navy); box-shadow:0 0 0 3px rgba(11,30,61,.06); background:white; }
+.form-group input.err, .form-group textarea.err { border-color:#e05050; }
+.form-group textarea { min-height:100px; }
+
+/* ── NAV PASOS ── */
+.nav-pasos { display:flex; justify-content:space-between; align-items:center; margin-top:1.5rem; }
+.btn-prev { border:1.5px solid var(--border); background:transparent; color:var(--muted); padding:12px 24px; border-radius:8px; font-family:'DM Sans',sans-serif; font-size:.82rem; font-weight:600; letter-spacing:.06em; text-transform:uppercase; cursor:pointer; transition:all .2s; }
+.btn-prev:hover { border-color:var(--navy); color:var(--navy); background:white; }
+.btn-next { background:var(--accent); color:var(--navy); border:none; padding:13px 32px; border-radius:8px; font-family:'DM Sans',sans-serif; font-size:.82rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; cursor:pointer; transition:all .2s; display:inline-flex; align-items:center; gap:8px; }
+.btn-next:hover { background:var(--accent2); transform:translateY(-2px); box-shadow:0 6px 20px rgba(200,169,110,.3); }
+.btn-next:disabled { opacity:.5; cursor:not-allowed; transform:none; }
+.spinner-b { width:14px; height:14px; border:2px solid rgba(11,30,61,.2); border-top-color:var(--navy); border-radius:50%; animation:spin .6s linear infinite; display:none; }
+.btn-next.loading .spinner-b { display:block; }
+.btn-next.loading .btxt { display:none; }
+@keyframes spin { to{transform:rotate(360deg)} }
+
+/* ── PANEL ── */
+.panel { display:none; animation:fadeUp .35s ease both; }
+.panel.activo { display:block; }
+@keyframes fadeUp { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
+
+/* ── ÉXITO ── */
+.exito { display:none; animation:fadeUp .4s ease both; }
+.exito.activo { display:block; }
+.exito-card { background:white; border:1px solid var(--border); border-radius:16px; padding:4rem 2rem; text-align:center; box-shadow:0 4px 24px rgba(11,30,61,.07); }
+.exito-icono { width:72px; height:72px; border-radius:50%; background:rgba(200,169,110,.12); border:1.5px solid rgba(200,169,110,.4); display:flex; align-items:center; justify-content:center; margin:0 auto 20px; }
+.exito-card h2 { font-family:'Playfair Display',serif; font-size:1.8rem; color:var(--navy); margin-bottom:10px; }
+.exito-card p { color:var(--muted); font-size:.92rem; max-width:400px; margin:0 auto 28px; line-height:1.7; }
+.exito-actions { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
+.btn-factura { display:inline-flex; align-items:center; gap:8px; background:var(--navy); color:white; padding:13px 28px; border-radius:8px; font-size:.84rem; font-weight:600; text-decoration:none; transition:all .2s; letter-spacing:.04em; }
+.btn-factura:hover { background:var(--navy2); transform:translateY(-2px); box-shadow:0 6px 20px rgba(11,30,61,.2); }
+.btn-nueva { display:inline-flex; align-items:center; gap:8px; background:transparent; color:var(--muted); padding:13px 24px; border-radius:8px; font-size:.84rem; font-weight:600; border:1.5px solid var(--border); cursor:pointer; transition:all .2s; font-family:'DM Sans',sans-serif; }
+.btn-nueva:hover { border-color:var(--navy); color:var(--navy); background:white; }
+
+/* ── TOAST ── */
+.toast { position:fixed; bottom:28px; left:50%; transform:translateX(-50%) translateY(20px); background:var(--navy); color:white; padding:13px 22px; border-radius:10px; font-size:13px; font-weight:500; display:flex; align-items:center; gap:10px; opacity:0; pointer-events:none; transition:all .3s ease; z-index:9999; border:1px solid rgba(255,255,255,.08); box-shadow:0 12px 40px rgba(11,30,61,.3); }
+.toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+.toast.err { border-color:rgba(220,80,80,.4); }
+
+/* ── FOOTER ── */
+footer { background:var(--navy); padding:2rem 2.5rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; border-top:1px solid rgba(255,255,255,.05); }
+.logo-f { font-family:'Playfair Display',serif; font-size:1.15rem; color:white; text-decoration:none; letter-spacing:.05em; }
+.logo-f em { color:var(--accent); font-style:italic; }
+footer span { font-size:.76rem; color:rgba(255,255,255,.3); }
+.footer-links { display:flex; gap:1.5rem; }
+.footer-links a { font-size:.78rem; color:rgba(255,255,255,.4); text-decoration:none; letter-spacing:.04em; transition:color .2s; }
+.footer-links a:hover { color:var(--accent); }
+
+/* ── RESPONSIVE ── */
+@media(max-width:900px){ .opciones-grid{grid-template-columns:1fr 1fr;} .plazo-opts{grid-template-columns:1fr 1fr;} }
+@media(max-width:600px){ .extras-grid{grid-template-columns:1fr;} .form-grid{grid-template-columns:1fr;} .opciones-grid{grid-template-columns:1fr;} .cotiz-card{padding:1.5rem;} footer{flex-direction:column;text-align:center;} }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header id="header">
+  <a href="#" class="logo"><em>Agencia</em> Digital</a>
+  <nav id="nav">
+    <a href="#">Inicio</a>
+    <a href="#">Nosotros</a>
+    <a href="#">Servicios</a>
+    <a href="#">Portfolio</a>
+    <a href="#">Contacto</a>
+  </nav>
+  <div class="menu-toggle" onclick="document.getElementById('nav').classList.toggle('open')">☰</div>
+</header>
+
+<!-- HERO -->
+<section class="hero">
+  <div style="position:relative;z-index:1">
+    <div class="badge">Cotizador Online</div>
+    <h1>¿Cuánto cuesta<br>tu <em>proyecto web?</em></h1>
+    <p>Completá el formulario y recibí una estimación al instante. Sin compromiso.</p>
+  </div>
+</section>
+
+<!-- COTIZADOR -->
+<div class="cotiz-wrap">
+
+  <!-- PASOS -->
+  <div class="pasos" id="pasos">
+    <div class="paso activo" id="p1"><div class="paso-num">1</div><span>Tipo de sitio</span></div>
+    <div class="paso-linea" id="l1"></div>
+    <div class="paso" id="p2"><div class="paso-num">2</div><span>Extras</span></div>
+    <div class="paso-linea" id="l2"></div>
+    <div class="paso" id="p3"><div class="paso-num">3</div><span>Plazo</span></div>
+    <div class="paso-linea" id="l3"></div>
+    <div class="paso" id="p4"><div class="paso-num">4</div><span>Tus datos</span></div>
+  </div>
+
+  <!-- ══ PANEL 1: TIPO ══ -->
+  <div class="panel activo" id="panel1">
+    <div class="cotiz-card">
+      <h2>¿Qué tipo de sitio necesitás?</h2>
+      <p class="sub">Seleccioná la opción que mejor describe tu proyecto.</p>
+      <div class="opciones-grid">
+        <div class="opcion" onclick="selOpcion(this,'Landing Page',800)">
+          <div class="op-icono"><svg width="28" height="28" fill="none" stroke="#0b1e3d" stroke-width="1.5" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/></svg></div>
+          <div class="op-nombre">Landing Page</div>
+          <div class="op-desc">Una página de presentación optimizada para convertir visitas en clientes.</div>
+          <div class="op-precio">Desde $800 USD</div>
+        </div>
+        <div class="opcion" onclick="selOpcion(this,'Sitio Web Institucional',1500)">
+          <div class="op-icono"><svg width="28" height="28" fill="none" stroke="#0b1e3d" stroke-width="1.5" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg></div>
+          <div class="op-nombre">Sitio Web</div>
+          <div class="op-desc">Sitio institucional completo con múltiples páginas, blog y formularios.</div>
+          <div class="op-precio">Desde $1.500 USD</div>
+        </div>
+        <div class="opcion" onclick="selOpcion(this,'Tienda Online (E-commerce)',2500)">
+          <div class="op-icono"><svg width="28" height="28" fill="none" stroke="#0b1e3d" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/></svg></div>
+          <div class="op-nombre">Tienda Online</div>
+          <div class="op-desc">E-commerce completo con carrito, pagos y gestión de productos.</div>
+          <div class="op-precio">Desde $2.500 USD</div>
+        </div>
+        <div class="opcion" onclick="selOpcion(this,'Biblioteca Digital',2800)">
+          <div class="op-icono"><svg width="28" height="28" fill="none" stroke="#0b1e3d" stroke-width="1.5" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/></svg></div>
+          <div class="op-nombre">Biblioteca Digital</div>
+          <div class="op-desc">Plataforma online para acceder a recursos multimedia sin limitaciones físicas.</div>
+          <div class="op-precio">Desde $2.800 USD</div>
+        </div>
+        <div class="opcion" onclick="selOpcion(this,'Web App a Medida',4000)">
+          <div class="op-icono"><svg width="28" height="28" fill="none" stroke="#0b1e3d" stroke-width="1.5" viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></div>
+          <div class="op-nombre">Web App</div>
+          <div class="op-desc">Aplicación web a medida con funcionalidades avanzadas y panel admin.</div>
+          <div class="op-precio">Desde $4.000 USD</div>
+        </div>
+        <div class="opcion" onclick="selOpcion(this,'A Presupuestar',0)">
+          <div class="op-icono"><svg width="28" height="28" fill="none" stroke="#0b1e3d" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/></svg></div>
+          <div class="op-nombre">No sé / Consultar</div>
+          <div class="op-desc">Tengo una idea pero no sé bien qué tipo de sitio necesito.</div>
+          <div class="op-precio">A presupuestar</div>
+        </div>
+      </div>
+    </div>
+    <div class="nav-pasos">
+      <div></div>
+      <button class="btn-next" onclick="irA(2)"><span class="btxt">Siguiente →</span></button>
+    </div>
+  </div>
+
+  <!-- ══ PANEL 2: EXTRAS ══ -->
+  <div class="panel" id="panel2">
+    <div class="cotiz-card">
+      <h2>¿Qué extras necesitás?</h2>
+      <p class="sub">Podés seleccionar más de uno. Son opcionales.</p>
+      <div class="extras-grid">
+        <div class="extra" onclick="toggleExtra(this,'SEO Avanzado',300)">
+          <div class="extra-check">✓</div>
+          <div class="extra-txt"><strong>SEO Avanzado</strong><span>Optimización para Google, meta tags y velocidad</span></div>
+          <div class="extra-precio">+$300</div>
+        </div>
+        <div class="extra" onclick="toggleExtra(this,'Diseño de Marca',400)">
+          <div class="extra-check">✓</div>
+          <div class="extra-txt"><strong>Diseño de Marca</strong><span>Logo, paleta de colores y tipografía</span></div>
+          <div class="extra-precio">+$400</div>
+        </div>
+        <div class="extra" onclick="toggleExtra(this,'Mantenimiento Mensual',150)">
+          <div class="extra-check">✓</div>
+          <div class="extra-txt"><strong>Mantenimiento Mensual</strong><span>Actualizaciones, backup y soporte técnico</span></div>
+          <div class="extra-precio">+$150/mes</div>
+        </div>
+        <div class="extra" onclick="toggleExtra(this,'Hosting + Dominio (1 año)',200)">
+          <div class="extra-check">✓</div>
+          <div class="extra-txt"><strong>Hosting + Dominio</strong><span>Servidor rápido y dominio por 1 año</span></div>
+          <div class="extra-precio">+$200/año</div>
+        </div>
+        <div class="extra" onclick="toggleExtra(this,'Redacción de Contenido',350)">
+          <div class="extra-check">✓</div>
+          <div class="extra-txt"><strong>Redacción de Contenido</strong><span>Textos profesionales para todo el sitio</span></div>
+          <div class="extra-precio">+$350</div>
+        </div>
+        <div class="extra" onclick="toggleExtra(this,'Analytics & Reportes',180)">
+          <div class="extra-check">✓</div>
+          <div class="extra-txt"><strong>Analytics & Reportes</strong><span>Configuración de Google Analytics y reportes</span></div>
+          <div class="extra-precio">+$180</div>
+        </div>
+      </div>
+    </div>
+    <div class="nav-pasos">
+      <button class="btn-prev" onclick="irA(1)">← Anterior</button>
+      <button class="btn-next" onclick="irA(3)"><span class="btxt">Siguiente →</span></button>
+    </div>
+  </div>
+
+  <!-- ══ PANEL 3: PLAZO ══ -->
+  <div class="panel" id="panel3">
+    <div class="cotiz-card">
+      <h2>¿En cuánto tiempo lo necesitás?</h2>
+      <p class="sub">El plazo puede afectar el precio final del proyecto.</p>
+      <div class="plazo-opts">
+        <div class="plazo-opt" onclick="selPlazo(this,'Sin apuro (más de 2 meses)',0)">
+          <strong>Sin apuro</strong><span>Más de 2 meses</span>
+        </div>
+        <div class="plazo-opt" onclick="selPlazo(this,'Normal (4 a 8 semanas)',0)">
+          <strong>Normal</strong><span>4 a 8 semanas</span>
+        </div>
+        <div class="plazo-opt" onclick="selPlazo(this,'Rápido (2 a 4 semanas)',200)">
+          <strong>Rápido</strong><span>2 a 4 semanas</span><span class="urgente">+$200</span>
+        </div>
+        <div class="plazo-opt" onclick="selPlazo(this,'Urgente (menos de 2 semanas)',500)">
+          <strong>Urgente</strong><span>Menos de 2 semanas</span><span class="urgente">+$500</span>
+        </div>
+      </div>
+    </div>
+    <div class="nav-pasos">
+      <button class="btn-prev" onclick="irA(2)">← Anterior</button>
+      <button class="btn-next" onclick="irA(4)"><span class="btxt">Ver resumen →</span></button>
+    </div>
+  </div>
+
+  <!-- ══ PANEL 4: DATOS + RESUMEN ══ -->
+  <div class="panel" id="panel4">
+
+    <div class="resumen-card" id="resumen">
+      <div class="resumen-titulo">Resumen de tu proyecto</div>
+      <ul class="resumen-items" id="resumen-lista"></ul>
+      <div class="resumen-total">
+        <span class="t-label">Estimación total</span>
+        <span class="t-amount" id="total-num">$0 USD</span>
+      </div>
+    </div>
+
+    <div class="cotiz-card">
+      <h2>Tus datos</h2>
+      <p class="sub">Completá tus datos para generar la cotización y factura.</p>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Nombre completo *</label>
+          <input type="text" id="f-nombre" placeholder="Juan Pérez">
+        </div>
+        <div class="form-group">
+          <label>Email *</label>
+          <input type="email" id="f-email" placeholder="juan@email.com">
+        </div>
+        <div class="form-group">
+          <label>WhatsApp / Teléfono</label>
+          <input type="tel" id="f-tel" placeholder="+1 809 000 0000">
+        </div>
+        <div class="form-group">
+          <label>Empresa / Negocio</label>
+          <input type="text" id="f-empresa" placeholder="Nombre de tu empresa">
+        </div>
+        <div class="form-group full">
+          <label>Contanos más sobre tu proyecto</label>
+          <textarea id="f-mensaje" placeholder="¿Qué tenés en mente? Cuantos más detalles, mejor..."></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="nav-pasos">
+      <button class="btn-prev" onclick="irA(3)">← Anterior</button>
+      <button class="btn-next" id="btnEnviar" onclick="enviar()">
+        <div class="spinner-b"></div>
+        <span class="btxt">Enviar y ver factura →</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ══ ÉXITO ══ -->
+  <div class="exito" id="exito">
+    <div class="exito-card">
+      <div class="exito-icono">
+        <svg width="32" height="32" fill="none" stroke="#c8a96e" stroke-width="1.5" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      </div>
+      <h2>¡Cotización generada!</h2>
+      <p>Tu cotización fue enviada por email y tu factura está lista para descargar.</p>
+      <div class="exito-actions">
+        <a href="factura.html" class="btn-factura" target="_blank">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          Ver Factura
+        </a>
+        <button class="btn-nueva" onclick="reiniciar()">Nueva cotización</button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /cotiz-wrap -->
+
+<footer>
+  <a href="#" class="logo-f"><em>Agencia</em> Digital</a>
+  <span>© 2025 · Todos los derechos reservados</span>
+  <div class="footer-links">
+    <a href="#">Nosotros</a>
+    <a href="#">Servicios</a>
+    <a href="#">Portfolio</a>
+    <a href="#">Contacto</a>
+  </div>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script>
+emailjs.init('I80DpMbblVg35xwzH');
+
+/* ── ESTADO ── */
+const estado = {
+  tipo: null, tipoPrecio: 0,
+  extras: [], extrasPrecio: 0,
+  plazo: null, plazoPrecio: 0
+};
+
+/* ── HEADER SCROLL ── */
+let lastScroll = 0;
+window.addEventListener('scroll', () => {
+  const cur = window.scrollY;
+  document.getElementById('header').classList.toggle('hidden', cur > lastScroll && cur > 80);
+  lastScroll = cur;
+});
+
+/* ── SELECCIÓN TIPO ── */
+function selOpcion(el, nombre, precio) {
+  document.querySelectorAll('.opcion').forEach(o => o.classList.remove('sel'));
+  el.classList.add('sel');
+  estado.tipo = nombre;
+  estado.tipoPrecio = precio;
+}
+
+/* ── EXTRAS ── */
+function toggleExtra(el, nombre, precio) {
+  el.classList.toggle('sel');
+  if (el.classList.contains('sel')) {
+    estado.extras.push({ nombre, precio });
+    estado.extrasPrecio += precio;
+  } else {
+    estado.extras = estado.extras.filter(e => e.nombre !== nombre);
+    estado.extrasPrecio -= precio;
+  }
+}
+
+/* ── PLAZO ── */
+function selPlazo(el, nombre, precio) {
+  document.querySelectorAll('.plazo-opt').forEach(o => o.classList.remove('sel'));
+  el.classList.add('sel');
+  estado.plazo = nombre;
+  estado.plazoPrecio = precio;
+}
+
+/* ── NAVEGACIÓN ── */
+function irA(num) {
+  if (num === 4) actualizarResumen();
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('activo'));
+  document.getElementById('panel' + num).classList.add('activo');
+  actualizarPasos(num);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function actualizarPasos(actual) {
+  for (let i = 1; i <= 4; i++) {
+    const p = document.getElementById('p' + i);
+    p.classList.remove('activo','completado');
+    if (i < actual) p.classList.add('completado');
+    if (i === actual) p.classList.add('activo');
+    if (i < 4) document.getElementById('l' + i).classList.toggle('on', i < actual);
+  }
+}
+
+/* ── RESUMEN ── */
+function actualizarResumen() {
+  const lista = document.getElementById('resumen-lista');
+  const total = estado.tipoPrecio + estado.extrasPrecio + estado.plazoPrecio;
+  let html = '';
+  if (estado.tipo) html += `<li><span class="r-label">${estado.tipo}</span><span class="r-val">$${estado.tipoPrecio.toLocaleString()}</span></li>`;
+  estado.extras.forEach(e => {
+    html += `<li><span class="r-label">${e.nombre}</span><span class="r-val">+$${e.precio.toLocaleString()}</span></li>`;
+  });
+  if (estado.plazoPrecio > 0) html += `<li><span class="r-label">Recargo urgencia (${estado.plazo})</span><span class="r-val">+$${estado.plazoPrecio.toLocaleString()}</span></li>`;
+  lista.innerHTML = html || '<li><span class="r-label">Sin selección aún</span><span class="r-val">—</span></li>';
+  document.getElementById('total-num').textContent = total > 0 ? '$' + total.toLocaleString() + ' USD' : 'A presupuestar';
+}
+
+/* ── ENVIAR ── */
+async function enviar() {
+  const nombre  = document.getElementById('f-nombre').value.trim();
+  const email   = document.getElementById('f-email').value.trim();
+  const tel     = document.getElementById('f-tel').value.trim();
+  const empresa = document.getElementById('f-empresa').value.trim();
+  const mensaje = document.getElementById('f-mensaje').value.trim();
+
+  // Validación
+  let ok = true;
+  ['f-nombre','f-email'].forEach(id => {
+    const el = document.getElementById(id);
+    el.classList.remove('err');
+    if (!el.value.trim()) { el.classList.add('err'); ok = false; }
+  });
+  if (!ok) { toast('Completá tu nombre y email para continuar.', true); return; }
+  const emailRx = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRx.test(email)) { document.getElementById('f-email').classList.add('err'); toast('Email inválido.', true); return; }
+  if (!estado.tipo) { toast('Seleccioná un tipo de sitio en el Paso 1.', true); return; }
+
+  const btn = document.getElementById('btnEnviar');
+  btn.classList.add('loading');
+  btn.disabled = true;
+
+  const total     = estado.tipoPrecio + estado.extrasPrecio + estado.plazoPrecio;
+  const extrasStr = estado.extras.length ? estado.extras.map(e => `${e.nombre} (+$${e.precio})`).join(', ') : 'Ninguno';
+  const plazoStr  = estado.plazo || 'No especificado';
+
+  /* ── Guardar en localStorage para la factura ── */
+  const cotizData = {
+    cliente: { nombre, email, tel, empresa, mensaje },
+    proyecto: {
+      tipo: estado.tipo, tipoPrecio: estado.tipoPrecio,
+      extras: estado.extras,
+      plazo: estado.plazo, plazoPrecio: estado.plazoPrecio,
+      total
+    },
+    fecha: new Date().toISOString(),
+    numero: 'COT-' + Date.now().toString().slice(-6)
+  };
+  localStorage.setItem('agencia_cotizacion', JSON.stringify(cotizData));
+
+  /* ── EmailJS ── */
+  try {
+    await emailjs.send('service_atpwhcf', 'template_xxx1i9b', {
+      nombre, correo: email, telefono: tel || 'No proporcionado',
+      plan: estado.tipo + ' ($' + estado.tipoPrecio + ')',
+      extras: extrasStr, total: '$' + total.toLocaleString() + ' USD',
+      descripcion: mensaje || 'Sin descripción adicional.',
+      plazo: plazoStr
+    });
+  } catch(e) {
+    console.warn('EmailJS:', e);
+    // Continuamos igual — la factura igual se genera
+  }
+
+  btn.classList.remove('loading');
+  btn.disabled = false;
+
+  // Mostrar éxito
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('activo'));
+  document.getElementById('pasos').style.display = 'none';
+  document.getElementById('exito').classList.add('activo');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+/* ── REINICIAR ── */
+function reiniciar() {
+  location.reload();
+}
+
+/* ── TOAST ── */
+let toastT = null;
+function toast(msg, isErr = false) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast show' + (isErr ? ' err' : '');
+  if (toastT) clearTimeout(toastT);
+  toastT = setTimeout(() => el.classList.remove('show'), 4000);
+}
+</script>
+</body>
+</html>

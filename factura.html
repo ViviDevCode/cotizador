@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Factura · Agencia Digital</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+
+    :root {
+      --navy:   #0b1e3d;
+      --navy2:  #0d2347;
+      --cream:  #eeeef0;
+      --warm:   #f5f5f7;
+      --accent: #c8a96e;
+      --accent2:#dfc08e;
+      --muted:  #7a7060;
+      --border: rgba(11,30,61,0.09);
+      --text:   #1a1a1a;
+    }
+
+    body { font-family:'DM Sans',sans-serif; background:var(--cream); color:var(--text); min-height:100vh; font-size:14px; }
+
+    /* ── TOPBAR ── */
+    .topbar { background:var(--navy); padding:13px 36px; display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; position:sticky; top:0; z-index:100; border-bottom:1px solid rgba(255,255,255,.05); }
+    .topbar-brand { font-family:'Playfair Display',serif; color:white; font-size:1.05rem; letter-spacing:.04em; }
+    .topbar-brand em { color:var(--accent); font-style:italic; }
+    .topbar-actions { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+    .btn { display:inline-flex; align-items:center; gap:8px; padding:9px 20px; border-radius:8px; font-family:'DM Sans',sans-serif; font-size:12.5px; font-weight:600; letter-spacing:.04em; cursor:pointer; border:none; transition:all .2s ease; }
+    .btn-pdf { background:var(--accent); color:var(--navy); }
+    .btn-pdf:hover { background:var(--accent2); transform:translateY(-1px); }
+    .btn-img { background:transparent; color:white; border:1px solid rgba(255,255,255,.2); }
+    .btn-img:hover { background:rgba(255,255,255,.07); }
+    .btn-back { background:transparent; color:rgba(255,255,255,.55); border:1px solid rgba(255,255,255,.1); font-size:12px; padding:8px 16px; }
+    .btn-back:hover { color:white; border-color:rgba(255,255,255,.25); }
+    .btn:disabled { opacity:.5; cursor:not-allowed; }
+    .spinner-btn { width:13px; height:13px; border:2px solid rgba(11,30,61,.2); border-top-color:var(--navy); border-radius:50%; animation:spin .6s linear infinite; display:none; }
+    .btn-img .spinner-btn { border-color:rgba(255,255,255,.2); border-top-color:white; }
+    .btn.loading .spinner-btn { display:block; }
+    .btn.loading .btn-label { display:none; }
+    @keyframes spin { to{transform:rotate(360deg)} }
+
+    /* ── NO DATA BANNER ── */
+    .no-data-banner { background:rgba(200,169,110,.1); border:1px solid rgba(200,169,110,.3); border-radius:10px; padding:13px 20px; font-size:13px; color:var(--muted); margin-bottom:18px; display:none; align-items:center; gap:10px; }
+    .no-data-banner.show { display:flex; }
+    .no-data-banner a { color:var(--accent); font-weight:600; text-decoration:none; }
+
+    /* ── PAGE ── */
+    .page-wrap { max-width:860px; margin:36px auto; padding:0 20px 60px; }
+    .edit-hint { text-align:center; font-size:11.5px; color:var(--muted); margin-bottom:18px; display:flex; align-items:center; justify-content:center; gap:6px; }
+    .edit-hint .tag { background:rgba(200,169,110,.15); color:var(--accent); border-radius:4px; padding:2px 8px; font-size:10.5px; font-weight:700; }
+
+    /* ── INVOICE ── */
+    #invoice { background:white; border-radius:16px; overflow:hidden; box-shadow:0 8px 40px rgba(11,30,61,.12),0 2px 8px rgba(11,30,61,.06); }
+
+    .inv-header { background:var(--navy); padding:42px 52px 34px; display:flex; justify-content:space-between; align-items:flex-start; gap:24px; flex-wrap:wrap; }
+    .inv-logo-name { font-family:'Playfair Display',serif; font-size:1.5rem; color:white; letter-spacing:.04em; line-height:1.2; }
+    .inv-logo-name em { color:var(--accent); font-style:italic; }
+    .inv-logo-tagline { font-size:11px; color:rgba(255,255,255,.4); letter-spacing:.12em; text-transform:uppercase; margin-top:5px; }
+    .inv-contact-info { margin-top:16px; font-size:12px; color:rgba(255,255,255,.45); line-height:1.9; }
+    .inv-meta { text-align:right; min-width:180px; }
+    .inv-title { font-family:'Playfair Display',serif; font-size:2rem; font-weight:700; color:var(--accent); letter-spacing:-.01em; line-height:1; }
+    .inv-number { font-size:12px; color:rgba(255,255,255,.45); margin-top:6px; letter-spacing:.06em; }
+    .inv-number strong { color:rgba(255,255,255,.8); }
+    .inv-dates { margin-top:14px; display:flex; flex-direction:column; gap:4px; align-items:flex-end; }
+    .inv-date-row { font-size:11.5px; color:rgba(255,255,255,.45); }
+    .inv-date-row strong { color:rgba(255,255,255,.8); }
+    .inv-status { margin-top:14px; display:inline-flex; align-items:center; gap:6px; padding:4px 13px; border-radius:100px; font-size:10.5px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; cursor:pointer; transition:all .2s; }
+    .inv-status.pagada    { background:rgba(62,207,142,.12); color:#2ba56e; border:1px solid rgba(62,207,142,.3); }
+    .inv-status.pendiente { background:rgba(200,169,110,.12); color:#a07940; border:1px solid rgba(200,169,110,.3); }
+    .inv-status.cancelado { background:rgba(229,87,87,.1); color:#c04040; border:1px solid rgba(229,87,87,.25); }
+    .status-dot { width:6px; height:6px; border-radius:50%; background:currentColor; }
+
+    .gold-line { height:3px; background:linear-gradient(90deg,var(--accent) 0%,transparent 100%); }
+
+    .inv-body { padding:42px 52px; }
+
+    .inv-parties { display:grid; grid-template-columns:1fr 1fr; gap:32px; margin-bottom:38px; }
+    .party-label { font-size:9.5px; font-weight:700; letter-spacing:.18em; text-transform:uppercase; color:var(--accent); margin-bottom:10px; }
+    .party-name { font-family:'Playfair Display',serif; font-size:1.1rem; font-weight:600; color:var(--navy); margin-bottom:6px; }
+    .party-detail { font-size:13px; color:var(--muted); line-height:1.8; }
+
+    [contenteditable] { outline:none; transition:background .15s,box-shadow .15s; border-radius:4px; padding:1px 4px; margin:-1px -4px; }
+    [contenteditable]:hover { background:rgba(200,169,110,.07); }
+    [contenteditable]:focus { background:rgba(200,169,110,.1); box-shadow:0 0 0 2px rgba(200,169,110,.35); }
+
+    .items-label { font-size:9.5px; font-weight:700; letter-spacing:.18em; text-transform:uppercase; color:var(--accent); margin-bottom:14px; }
+    table { width:100%; border-collapse:collapse; margin-bottom:12px; }
+    thead tr { background:var(--navy); }
+    thead th { padding:11px 16px; font-size:10px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:rgba(255,255,255,.55); text-align:left; }
+    thead th:nth-child(2),thead th:nth-child(3),thead th:nth-child(4) { text-align:right; }
+    tbody tr { border-bottom:1px solid var(--border); transition:background .15s; }
+    tbody tr:last-child { border-bottom:none; }
+    tbody td { padding:13px 16px; font-size:13.5px; color:var(--text); vertical-align:top; }
+    tbody td:nth-child(2),tbody td:nth-child(3),tbody td:nth-child(4) { text-align:right; }
+    tbody td:nth-child(4) { font-weight:700; color:var(--navy); }
+    .td-sub-label { font-size:11.5px; color:var(--muted); margin-top:3px; }
+    .remove-row { background:none; border:none; cursor:pointer; color:#d0a0a0; font-size:13px; padding:0 4px; opacity:0; transition:opacity .15s; }
+    tbody tr:hover .remove-row { opacity:1; }
+
+    .add-row-btn { display:inline-flex; align-items:center; gap:7px; padding:8px 16px; background:transparent; border:1px dashed rgba(200,169,110,.5); border-radius:7px; font-family:'DM Sans',sans-serif; font-size:12px; color:var(--accent); cursor:pointer; transition:all .2s; margin-bottom:28px; }
+    .add-row-btn:hover { background:rgba(200,169,110,.06); border-style:solid; }
+
+    .totals-wrap { display:flex; justify-content:flex-end; margin-bottom:38px; }
+    .totals-box { width:300px; border:1px solid var(--border); border-radius:10px; overflow:hidden; }
+    .total-row { display:flex; justify-content:space-between; padding:11px 18px; font-size:13px; border-bottom:1px solid var(--border); }
+    .total-row:last-child { border-bottom:none; }
+    .total-row .t-label { color:var(--muted); }
+    .total-row .t-value { font-weight:600; }
+    .total-row.grand { background:var(--navy); padding:14px 18px; }
+    .total-row.grand .t-label { color:rgba(255,255,255,.65); font-weight:600; letter-spacing:.04em; }
+    .total-row.grand .t-value { color:var(--accent); font-family:'Playfair Display',serif; font-size:1.25rem; font-weight:700; }
+
+    .inv-notes { background:var(--warm); border-radius:10px; padding:20px 24px; margin-bottom:36px; font-size:12.5px; color:var(--muted); line-height:1.7; }
+    .inv-notes strong { display:block; font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--navy); margin-bottom:6px; }
+
+    .inv-footer { border-top:1px solid var(--border); padding-top:22px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; }
+    .inv-footer-brand { font-family:'Playfair Display',serif; font-size:.9rem; color:var(--navy); }
+    .inv-footer-brand em { color:var(--accent); font-style:italic; }
+    .inv-footer-thanks { font-size:12px; color:var(--muted); }
+
+    @media(max-width:620px){
+      .inv-header,.inv-body{padding:28px 22px;}
+      .inv-parties{grid-template-columns:1fr;}
+      .totals-wrap{justify-content:stretch;}
+      .totals-box{width:100%;}
+    }
+    @media print {
+      .topbar,.edit-hint,.add-row-btn,.remove-row,.no-data-banner{display:none!important;}
+      body{background:white;}
+      .page-wrap{margin:0;padding:0;max-width:100%;}
+      #invoice{box-shadow:none;border-radius:0;}
+    }
+  </style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="topbar-brand"><em>Agencia</em> Digital · Factura</div>
+    <div class="topbar-actions">
+      <button class="btn btn-back" onclick="history.back()">← Volver</button>
+      <button class="btn btn-img" id="btnImg" onclick="descargarImagen()">
+        <div class="spinner-btn"></div><span class="btn-label">⬇ Imagen PNG</span>
+      </button>
+      <button class="btn btn-pdf" id="btnPdf" onclick="descargarPDF()">
+        <div class="spinner-btn"></div><span class="btn-label">⬇ Descargar PDF</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="page-wrap">
+    <div class="no-data-banner" id="noBanner">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/></svg>
+      No hay cotización guardada. <a href="cotizador.html">Completar el cotizador →</a> · Los campos son editables.
+    </div>
+
+    <div class="edit-hint">
+      <span class="tag">✎ Editable</span> Hacé clic en cualquier texto para modificarlo antes de exportar
+    </div>
+
+    <div id="invoice">
+
+      <div class="inv-header">
+        <div>
+          <div class="inv-logo-name"><em>Agencia</em> Digital</div>
+          <div class="inv-logo-tagline">Desarrollo Web Profesional</div>
+          <div class="inv-contact-info">
+            <div contenteditable="true">Santo Domingo, República Dominicana</div>
+            <div contenteditable="true">contacto@agenciadigital.com</div>
+            <div contenteditable="true">+1 (809) 000-0000</div>
+          </div>
+        </div>
+
+        <div class="inv-meta">
+          <div class="inv-title">FACTURA</div>
+          <div class="inv-number">No. <strong id="invNumero" contenteditable="true">#0001</strong></div>
+          <div class="inv-dates">
+            <div class="inv-date-row">Emisión: <strong id="invFechaEmision"></strong></div>
+            <div class="inv-date-row">Vence: <strong id="invFechaVence"></strong></div>
+          </div>
+          <div style="margin-top:14px;display:flex;justify-content:flex-end;">
+            <div class="inv-status pendiente" id="statusBadge" onclick="cycleStatus()">
+              <div class="status-dot"></div>
+              <span id="statusTxt">Pendiente</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="gold-line"></div>
+
+      <div class="inv-body">
+
+        <div class="inv-parties">
+          <div>
+            <div class="party-label">De</div>
+            <div class="party-name" contenteditable="true">Agencia Digital</div>
+            <div class="party-detail" contenteditable="true">RNC: 000-000000-0<br>Santo Domingo, República Dominicana<br>contacto@agenciadigital.com<br>+1 (809) 000-0000</div>
+          </div>
+          <div>
+            <div class="party-label">Para</div>
+            <div class="party-name" id="clienteNombre" contenteditable="true">—</div>
+            <div class="party-detail" id="clienteDetalle" contenteditable="true">—</div>
+          </div>
+        </div>
+
+        <div class="items-label">Detalle de Servicios</div>
+        <table>
+          <thead>
+            <tr>
+              <th style="width:45%">Descripción</th>
+              <th style="width:10%">Cant.</th>
+              <th style="width:20%">Precio unit.</th>
+              <th style="width:20%">Subtotal</th>
+              <th style="width:5%"></th>
+            </tr>
+          </thead>
+          <tbody id="itemsBody"></tbody>
+        </table>
+        <button class="add-row-btn" onclick="agregarFila()">+ Agregar ítem</button>
+
+        <div class="totals-wrap">
+          <div class="totals-box">
+            <div class="total-row">
+              <span class="t-label">Subtotal</span>
+              <span class="t-value" id="tSubtotal">$0.00</span>
+            </div>
+            <div class="total-row">
+              <span class="t-label">Descuento (<span contenteditable="true" id="discPct" oninput="recalc()">0</span>%)</span>
+              <span class="t-value" id="tDiscount">–$0.00</span>
+            </div>
+            <div class="total-row">
+              <span class="t-label">ITBIS (<span contenteditable="true" id="taxPct" oninput="recalc()">18</span>%)</span>
+              <span class="t-value" id="tTax">$0.00</span>
+            </div>
+            <div class="total-row grand">
+              <span class="t-label">Total</span>
+              <span class="t-value" id="tTotal">$0.00</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="inv-notes">
+          <strong>Notas y condiciones de pago</strong>
+          <div contenteditable="true" id="notasContenido">El pago puede realizarse mediante transferencia bancaria, PayPal o tarjeta de crédito. Esta factura es válida por 30 días a partir de la fecha de emisión. Gracias por confiar en nuestros servicios.</div>
+        </div>
+
+        <div class="inv-footer">
+          <div class="inv-footer-brand"><em>Agencia</em> Digital · Desarrollo Web</div>
+          <div class="inv-footer-thanks">¡Gracias por su preferencia!</div>
+        </div>
+
+      </div>
+    </div><!-- /#invoice -->
+  </div>
+
+  <script>
+    /* ══════════════════════════════════════════
+       1. LEER DATOS DEL COTIZADOR
+    ══════════════════════════════════════════ */
+    let cotiz = null;
+    try { cotiz = JSON.parse(localStorage.getItem('agencia_cotizacion')); } catch(e){}
+
+    if (!cotiz) document.getElementById('noBanner').classList.add('show');
+
+    /* Fechas */
+    const hoy   = cotiz ? new Date(cotiz.fecha) : new Date();
+    const vence = new Date(hoy); vence.setDate(hoy.getDate() + 30);
+    const fmt   = d => d.toLocaleDateString('es-DO',{day:'2-digit',month:'long',year:'numeric'});
+    document.getElementById('invFechaEmision').textContent = fmt(hoy);
+    document.getElementById('invFechaVence').textContent   = fmt(vence);
+
+    /* Número */
+    if (cotiz?.numero) document.getElementById('invNumero').textContent = cotiz.numero;
+
+    /* Cliente */
+    if (cotiz?.cliente) {
+      const c = cotiz.cliente;
+      document.getElementById('clienteNombre').textContent = c.nombre || '—';
+      let det = '';
+      if (c.empresa) det += c.empresa + '\n';
+      if (c.email)   det += c.email   + '\n';
+      if (c.tel)     det += c.tel     + '\n';
+      document.getElementById('clienteDetalle').innerText = det.trim() || '—';
+    }
+
+    /* Descripción proyecto en notas */
+    if (cotiz?.cliente?.mensaje) {
+      const el = document.getElementById('notasContenido');
+      el.innerText = '"' + cotiz.cliente.mensaje + '"\n\n' + el.innerText;
+    }
+
+    /* ══════════════════════════════════════════
+       2. CONSTRUIR TABLA
+    ══════════════════════════════════════════ */
+    function crearFila({ desc='', detalle='', qty=1, price=0 }={}) {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>
+          <div contenteditable="true" class="item-desc" oninput="recalc()">${desc}</div>
+          <div contenteditable="true" class="td-sub-label">${detalle}</div>
+        </td>
+        <td><div contenteditable="true" class="item-qty" oninput="recalcRow(this)">${qty}</div></td>
+        <td><div contenteditable="true" class="item-price" oninput="recalcRow(this)">$${Number(price).toFixed(2)}</div></td>
+        <td class="item-sub">$${(qty * Number(price)).toFixed(2)}</td>
+        <td><button class="remove-row" onclick="this.closest('tr').remove();recalc()" title="Eliminar">✕</button></td>`;
+      return tr;
+    }
+
+    function agregarFila() {
+      document.getElementById('itemsBody').appendChild(crearFila({ desc:'Servicio', qty:1, price:0 }));
+      recalc();
+    }
+
+    const tbody = document.getElementById('itemsBody');
+
+    if (cotiz?.proyecto) {
+      const p = cotiz.proyecto;
+      if (p.tipo) {
+        tbody.appendChild(crearFila({ desc:p.tipo, detalle:'Servicio principal', qty:1, price:p.tipoPrecio||0 }));
+      }
+      (p.extras||[]).forEach(e => {
+        tbody.appendChild(crearFila({ desc:e.nombre, detalle:'Servicio adicional', qty:1, price:e.precio||0 }));
+      });
+      if (p.plazoPrecio > 0) {
+        tbody.appendChild(crearFila({ desc:'Recargo por urgencia', detalle:p.plazo||'', qty:1, price:p.plazoPrecio }));
+      }
+    } else {
+      tbody.appendChild(crearFila({ desc:'Servicio Web', detalle:'Descripción del servicio', qty:1, price:0 }));
+    }
+
+    recalc();
+
+    /* ══════════════════════════════════════════
+       3. CÁLCULOS
+    ══════════════════════════════════════════ */
+    function recalcRow(el) {
+      const tr    = el.closest('tr');
+      const qty   = parseFloat(tr.querySelector('.item-qty').textContent.replace(/[^0-9.]/g,''))||0;
+      const price = parseFloat(tr.querySelector('.item-price').textContent.replace(/[^0-9.]/g,''))||0;
+      tr.querySelector('.item-sub').textContent = '$'+(qty*price).toFixed(2);
+      recalc();
+    }
+
+    function recalc() {
+      let sub = 0;
+      document.querySelectorAll('#itemsBody tr').forEach(tr => {
+        const q = parseFloat(tr.querySelector('.item-qty')?.textContent.replace(/[^0-9.]/g,''))||0;
+        const p = parseFloat(tr.querySelector('.item-price')?.textContent.replace(/[^0-9.]/g,''))||0;
+        const s = q*p;
+        if (tr.querySelector('.item-sub')) tr.querySelector('.item-sub').textContent='$'+s.toFixed(2);
+        sub += s;
+      });
+      const disc  = parseFloat(document.getElementById('discPct').textContent)||0;
+      const tax   = parseFloat(document.getElementById('taxPct').textContent)||0;
+      const dAmt  = sub*(disc/100);
+      const base  = sub-dAmt;
+      const tAmt  = base*(tax/100);
+      const total = base+tAmt;
+      document.getElementById('tSubtotal').textContent='$'+sub.toFixed(2);
+      document.getElementById('tDiscount').textContent='–$'+dAmt.toFixed(2);
+      document.getElementById('tTax').textContent='$'+tAmt.toFixed(2);
+      document.getElementById('tTotal').textContent='$'+total.toFixed(2);
+    }
+
+    /* ══════════════════════════════════════════
+       4. STATUS BADGE
+    ══════════════════════════════════════════ */
+    const statuses=[{cls:'pendiente',label:'Pendiente'},{cls:'pagada',label:'Pagada'},{cls:'cancelado',label:'Cancelado'}];
+    let sIdx=0;
+    function cycleStatus(){
+      sIdx=(sIdx+1)%statuses.length;
+      document.getElementById('statusBadge').className='inv-status '+statuses[sIdx].cls;
+      document.getElementById('statusTxt').textContent=statuses[sIdx].label;
+    }
+
+    /* ══════════════════════════════════════════
+       5. EXPORTAR
+    ══════════════════════════════════════════ */
+    const exportHide='.topbar,.edit-hint,.add-row-btn,.remove-row,.no-data-banner';
+    function hideUI(){ document.querySelectorAll(exportHide).forEach(e=>e.style.visibility='hidden'); }
+    function showUI(){ document.querySelectorAll(exportHide).forEach(e=>e.style.visibility=''); }
+    function setLoad(id,v){ const b=document.getElementById(id);b.disabled=v;b.classList.toggle('loading',v); }
+
+    async function descargarImagen(){
+      setLoad('btnImg',true); hideUI();
+      await new Promise(r=>setTimeout(r,60));
+      try{
+        const canvas=await html2canvas(document.getElementById('invoice'),{scale:2.5,useCORS:true,backgroundColor:'#ffffff',logging:false});
+        const a=document.createElement('a');
+        a.download='factura-'+(cotiz?.cliente?.nombre||'agencia').replace(/\s+/g,'-')+'.png';
+        a.href=canvas.toDataURL('image/png');
+        a.click();
+      }catch(e){alert('Error al generar imagen.');}
+      finally{showUI();setLoad('btnImg',false);}
+    }
+
+    async function descargarPDF(){
+      setLoad('btnPdf',true); hideUI();
+      await new Promise(r=>setTimeout(r,60));
+      try{
+        const {jsPDF}=window.jspdf;
+        const canvas=await html2canvas(document.getElementById('invoice'),{scale:2.5,useCORS:true,backgroundColor:'#ffffff',logging:false});
+        const imgData=canvas.toDataURL('image/png');
+        const pdfW=210;
+        const pdfH=Math.round((canvas.height*pdfW)/canvas.width);
+        const pdf=new jsPDF({orientation:pdfH>pdfW?'portrait':'landscape',unit:'mm',format:[pdfW,pdfH]});
+        pdf.addImage(imgData,'PNG',0,0,pdfW,pdfH,'','FAST');
+        pdf.save('factura-'+(cotiz?.cliente?.nombre||'agencia').replace(/\s+/g,'-')+'.pdf');
+      }catch(e){alert('Error al generar PDF.');}
+      finally{showUI();setLoad('btnPdf',false);}
+    }
+  </script>
+</body>
+</html>
