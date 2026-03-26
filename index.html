@@ -2,591 +2,883 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Cotizador · Agencia Digital</title>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Cotizador — LP</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
-*, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
-html { scroll-behavior:smooth; }
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior:smooth; font-size:16px; }
 
 :root {
-  --navy:   #0b1e3d;
-  --navy2:  #0d2347;
-  --cream:  #eeeef0;
-  --warm:   #f5f5f7;
-  --accent: #c8a96e;
-  --accent2:#dfc08e;
-  --muted:  #7a7060;
-  --border: rgba(11,30,61,0.09);
-  --text:   #1a1a1a;
+  --navy: #0c1f3f;
+  --navy2: #162d56;
+  --gold: #c9a96e;
+  --gold2: #e8c98a;
+  --cream: #f4f3ef;
+  --white: #fafaf8;
+  --muted: #7a7468;
+  --border: rgba(12,31,63,0.10);
+  --border2: rgba(12,31,63,0.06);
+  --shadow: 0 8px 40px rgba(12,31,63,0.10);
+  --radius: 16px;
+  --radius-sm: 10px;
 }
 
-body { font-family:'DM Sans',sans-serif; background:var(--cream); color:var(--text); min-height:100vh; font-size:14px; line-height:1.65; }
+body {
+  font-family:'Outfit', sans-serif;
+  background: var(--cream);
+  color: var(--navy);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
 
-/* ── HEADER ── */
+/* HEADER */
 header {
-  position:fixed; top:0; left:0; width:100%; height:68px;
-  background:rgba(11,30,61,0.97); backdrop-filter:blur(14px);
-  display:flex; align-items:center; justify-content:space-between;
-  padding:0 52px; z-index:1000;
-  border-bottom:1px solid rgba(255,255,255,0.05);
-  transition:transform .3s ease;
+  position: fixed; top:0; left:0; width:100%; z-index:999;
+  background: rgba(12,31,63,0.97);
+  backdrop-filter: blur(16px);
+  height: 68px;
+  display: flex; align-items:center; justify-content:space-between;
+  padding: 0 clamp(16px, 5vw, 60px);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
 }
-header.hidden { transform:translateY(-100%); }
-.logo { font-family:'Playfair Display',serif; color:white; font-size:1.3rem; letter-spacing:.05em; text-decoration:none; }
-.logo em { color:var(--accent); font-style:italic; }
-nav a { color:rgba(255,255,255,.6); text-decoration:none; font-size:.78rem; font-weight:500; letter-spacing:.1em; text-transform:uppercase; margin-left:28px; transition:color .2s; }
-nav a:hover { color:var(--accent); }
-.menu-toggle { display:none; color:white; font-size:1.3rem; cursor:pointer; }
-@media(max-width:700px){ header{padding:0 20px;} nav{display:none;} .menu-toggle{display:block;} }
+.logo {
+  font-family:'Cormorant Garamond', serif;
+  color:white; font-size:1.5rem; font-weight:600;
+  text-decoration:none; letter-spacing:0.06em;
+}
+nav { display:flex; gap:0; }
+nav a {
+  color:rgba(255,255,255,0.65); text-decoration:none;
+  font-size:0.78rem; font-weight:500; letter-spacing:0.1em;
+  text-transform:uppercase; padding:0 14px; transition:color 0.2s;
+}
+nav a:hover { color:var(--gold); }
+.hamburger {
+  display:none; flex-direction:column; gap:5px;
+  cursor:pointer; padding:4px;
+}
+.hamburger span {
+  display:block; width:22px; height:2px;
+  background:white; border-radius:2px; transition:all 0.3s;
+}
+.mobile-nav {
+  display:none; position:fixed;
+  top:68px; left:0; right:0;
+  background:rgba(12,31,63,0.98);
+  padding:1.2rem 0; z-index:998;
+  border-bottom:1px solid rgba(255,255,255,0.06);
+  flex-direction:column;
+}
+.mobile-nav.open { display:flex; }
+.mobile-nav a {
+  color:rgba(255,255,255,0.75); text-decoration:none;
+  font-size:0.9rem; font-weight:500; letter-spacing:0.06em;
+  text-transform:uppercase; padding:13px clamp(16px,5vw,60px);
+  transition:color 0.2s; border-bottom:1px solid rgba(255,255,255,0.04);
+}
+.mobile-nav a:hover { color:var(--gold); }
 
-/* ── HERO ── */
+/* HERO */
 .hero {
-  background:var(--navy);
-  padding:calc(68px + 4.5rem) 52px 4rem;
-  text-align:center; position:relative; overflow:hidden;
+  background: var(--navy);
+  padding: calc(68px + clamp(3rem,7vw,5.5rem)) clamp(16px,5vw,60px) clamp(2.5rem,5vw,4rem);
+  position:relative; overflow:hidden;
 }
 .hero::before {
   content:''; position:absolute; inset:0;
-  background:radial-gradient(ellipse 70% 60% at 20% 50%,rgba(200,169,110,.07) 0%,transparent 70%),
-             radial-gradient(ellipse 50% 80% at 80% 20%,rgba(200,169,110,.04) 0%,transparent 60%);
+  background: radial-gradient(ellipse at 30% 80%, rgba(201,169,110,0.10) 0%, transparent 65%),
+              radial-gradient(ellipse at 80% 20%, rgba(22,45,86,0.5) 0%, transparent 55%);
   pointer-events:none;
 }
-.hero::after { content:''; position:absolute; left:0; bottom:0; width:100%; height:1px; background:linear-gradient(90deg,transparent,rgba(200,169,110,.3),transparent); }
-.badge { display:inline-block; font-size:.7rem; font-weight:700; letter-spacing:.2em; text-transform:uppercase; color:var(--accent); border:1px solid rgba(200,169,110,.3); padding:5px 16px; border-radius:100px; margin-bottom:20px; }
-.hero h1 { font-family:'Playfair Display',serif; font-size:clamp(2rem,4.5vw,3.2rem); font-weight:700; color:white; letter-spacing:-.02em; line-height:1.15; margin-bottom:14px; }
-.hero h1 em { color:var(--accent); font-style:italic; }
-.hero p { color:rgba(255,255,255,.45); font-size:.95rem; font-weight:300; max-width:440px; margin:0 auto; }
-
-/* ── WRAP ── */
-.cotiz-wrap { max-width:1020px; margin:0 auto; padding:3.5rem 24px 80px; }
-
-/* ── STEPPER ── */
-.pasos { display:flex; align-items:center; justify-content:center; gap:0; margin-bottom:3rem; }
-.paso { display:flex; align-items:center; gap:9px; font-size:.72rem; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); transition:color .3s; }
-.paso.activo { color:var(--navy); }
-.paso.completado { color:var(--accent); }
-.paso-num { width:30px; height:30px; border-radius:50%; border:2px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:.78rem; font-weight:700; background:white; color:var(--muted); transition:all .3s; flex-shrink:0; }
-.paso.activo .paso-num { border-color:var(--navy); background:var(--navy); color:white; }
-.paso.completado .paso-num { border-color:var(--accent); background:var(--accent); color:var(--navy); }
-.paso span { display:none; }
-@media(min-width:520px){ .paso span { display:block; } }
-.paso-linea { flex:1; max-width:60px; height:2px; background:var(--border); border-radius:2px; margin:0 6px; transition:background .3s; }
-.paso-linea.on { background:var(--accent); }
-
-/* ── CARD ── */
-.cotiz-card { background:white; border:1px solid var(--border); border-radius:16px; padding:2.2rem 2.4rem; margin-bottom:1.5rem; box-shadow:0 4px 24px rgba(11,30,61,.07); }
-.cotiz-card h2 { font-family:'Playfair Display',serif; font-size:1.4rem; font-weight:600; color:var(--navy); margin-bottom:5px; }
-.cotiz-card .sub { font-size:.86rem; color:var(--muted); margin-bottom:2rem; }
-
-/* ── OPCIONES TIPO ── */
-.opciones-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:1rem; }
-.opcion { border:1.5px solid var(--border); border-radius:12px; padding:1.4rem; cursor:pointer; background:var(--cream); position:relative; transition:all .2s; }
-.opcion:hover { border-color:var(--navy); background:white; transform:translateY(-2px); box-shadow:0 8px 24px rgba(11,30,61,.09); }
-.opcion.sel { border-color:var(--navy); background:white; box-shadow:0 6px 24px rgba(11,30,61,.1); }
-.opcion.sel::after { content:'✓'; position:absolute; top:12px; right:12px; width:22px; height:22px; border-radius:50%; background:var(--navy); color:white; font-size:.72rem; font-weight:700; display:flex; align-items:center; justify-content:center; }
-.op-icono { margin-bottom:10px; }
-.op-nombre { font-size:.92rem; font-weight:600; color:var(--navy); margin-bottom:4px; }
-.op-desc { font-size:.78rem; color:var(--muted); line-height:1.55; }
-.op-precio { font-size:.78rem; color:var(--accent); font-weight:700; margin-top:10px; }
-
-/* ── EXTRAS ── */
-.extras-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:.8rem; }
-.extra { display:flex; align-items:center; gap:12px; border:1.5px solid var(--border); border-radius:10px; padding:1rem 1.2rem; cursor:pointer; background:var(--cream); transition:all .2s; }
-.extra:hover { border-color:var(--navy); background:white; }
-.extra.sel { border-color:var(--accent); background:white; }
-.extra-check { width:20px; height:20px; border-radius:5px; border:2px solid var(--border); flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:.7rem; color:white; transition:all .2s; }
-.extra.sel .extra-check { background:var(--accent); border-color:var(--accent); }
-.extra-txt { flex:1; }
-.extra-txt strong { font-size:.88rem; color:var(--navy); display:block; margin-bottom:2px; }
-.extra-txt span { font-size:.76rem; color:var(--muted); }
-.extra-precio { font-size:.82rem; font-weight:700; color:var(--accent); white-space:nowrap; }
-
-/* ── PLAZO ── */
-.plazo-opts { display:grid; grid-template-columns:repeat(4,1fr); gap:.8rem; }
-.plazo-opt { border:1.5px solid var(--border); border-radius:10px; padding:1.1rem 1rem; cursor:pointer; background:var(--cream); text-align:center; transition:all .2s; }
-.plazo-opt:hover { border-color:var(--navy); background:white; }
-.plazo-opt.sel { border-color:var(--navy); background:white; box-shadow:0 4px 16px rgba(11,30,61,.09); }
-.plazo-opt strong { font-size:.9rem; color:var(--navy); display:block; margin-bottom:4px; }
-.plazo-opt span { font-size:.76rem; color:var(--muted); }
-.plazo-opt .urgente { font-size:.72rem; color:#c0392b; font-weight:700; margin-top:6px; display:block; }
-
-/* ── RESUMEN DARK ── */
-.resumen-card { background:var(--navy); border-radius:16px; padding:2rem 2.2rem; margin-bottom:1.5rem; position:relative; overflow:hidden; box-shadow:0 8px 32px rgba(11,30,61,.18); }
-.resumen-card::before { content:''; position:absolute; inset:0; background:linear-gradient(135deg,rgba(200,169,110,.08) 0%,transparent 55%); pointer-events:none; }
-.resumen-card::after { content:''; position:absolute; bottom:0; left:0; width:100%; height:2px; background:linear-gradient(90deg,var(--accent),transparent); }
-.resumen-titulo { font-family:'Playfair Display',serif; font-size:1.15rem; color:white; margin-bottom:1.4rem; }
-.resumen-items { list-style:none; margin-bottom:1.4rem; }
-.resumen-items li { display:flex; justify-content:space-between; align-items:center; padding:.55rem 0; border-bottom:1px solid rgba(255,255,255,.07); font-size:.86rem; }
-.resumen-items li:last-child { border:none; }
-.resumen-items li .r-label { color:rgba(255,255,255,.55); }
-.resumen-items li .r-val { color:white; font-weight:600; }
-.resumen-total { display:flex; justify-content:space-between; align-items:baseline; padding-top:1rem; border-top:1px solid rgba(200,169,110,.3); }
-.resumen-total .t-label { font-size:.78rem; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:rgba(255,255,255,.45); }
-.resumen-total .t-amount { font-family:'Playfair Display',serif; font-size:2rem; color:var(--accent); font-weight:700; }
-
-/* ── FORM ── */
-.form-grid { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
-.form-group { display:flex; flex-direction:column; gap:7px; }
-.form-group.full { grid-column:1/-1; }
-.form-group label { font-size:.7rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }
-.form-group input, .form-group textarea {
-  background:var(--cream); border:1.5px solid var(--border); border-radius:8px;
-  padding:12px 14px; font-family:'DM Sans',sans-serif; font-size:13.5px;
-  color:var(--text); outline:none; transition:border-color .2s, box-shadow .2s; width:100%; resize:vertical;
+.hero-inner { max-width:700px; margin:0 auto; text-align:center; position:relative; z-index:1; }
+.hero-tag {
+  display:inline-block; font-size:0.72rem; font-weight:600;
+  letter-spacing:0.22em; text-transform:uppercase;
+  color:var(--gold); margin-bottom:14px;
+  background: rgba(201,169,110,0.1);
+  border:1px solid rgba(201,169,110,0.25);
+  padding:5px 14px; border-radius:100px;
 }
-.form-group input::placeholder, .form-group textarea::placeholder { color:var(--muted); opacity:.7; }
-.form-group input:focus, .form-group textarea:focus { border-color:var(--navy); box-shadow:0 0 0 3px rgba(11,30,61,.06); background:white; }
-.form-group input.err, .form-group textarea.err { border-color:#e05050; }
-.form-group textarea { min-height:100px; }
+.hero h1 {
+  font-family:'Cormorant Garamond', serif;
+  font-size: clamp(2rem, 5.5vw, 3.4rem);
+  font-weight:700; color:white; line-height:1.1;
+  letter-spacing:-0.01em; margin-bottom:14px;
+}
+.hero h1 em { color:var(--gold); font-style:italic; }
+.hero p {
+  color:rgba(255,255,255,0.48); font-size:clamp(0.88rem,2vw,1rem);
+  font-weight:300; line-height:1.8; max-width:480px; margin:0 auto;
+}
 
-/* ── NAV PASOS ── */
-.nav-pasos { display:flex; justify-content:space-between; align-items:center; margin-top:1.5rem; }
-.btn-prev { border:1.5px solid var(--border); background:transparent; color:var(--muted); padding:12px 24px; border-radius:8px; font-family:'DM Sans',sans-serif; font-size:.82rem; font-weight:600; letter-spacing:.06em; text-transform:uppercase; cursor:pointer; transition:all .2s; }
-.btn-prev:hover { border-color:var(--navy); color:var(--navy); background:white; }
-.btn-next { background:var(--accent); color:var(--navy); border:none; padding:13px 32px; border-radius:8px; font-family:'DM Sans',sans-serif; font-size:.82rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; cursor:pointer; transition:all .2s; display:inline-flex; align-items:center; gap:8px; }
-.btn-next:hover { background:var(--accent2); transform:translateY(-2px); box-shadow:0 6px 20px rgba(200,169,110,.3); }
-.btn-next:disabled { opacity:.5; cursor:not-allowed; transform:none; }
-.spinner-b { width:14px; height:14px; border:2px solid rgba(11,30,61,.2); border-top-color:var(--navy); border-radius:50%; animation:spin .6s linear infinite; display:none; }
-.btn-next.loading .spinner-b { display:block; }
-.btn-next.loading .btxt { display:none; }
-@keyframes spin { to{transform:rotate(360deg)} }
+/* MAIN WRAP */
+.wrap {
+  max-width:960px; margin:0 auto;
+  padding: clamp(1.8rem,5vw,4rem) clamp(12px,4vw,2rem) clamp(4rem,8vw,7rem);
+}
 
-/* ── PANEL ── */
-.panel { display:none; animation:fadeUp .35s ease both; }
-.panel.activo { display:block; }
-@keyframes fadeUp { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
+/* PROGRESS */
+.progress-bar {
+  display:flex; align-items:center; justify-content:center;
+  margin-bottom: clamp(1.5rem,4vw,2.5rem);
+  flex-wrap: nowrap; overflow-x: auto;
+  scrollbar-width:none; -ms-overflow-style:none;
+  padding: 4px 0;
+}
+.progress-bar::-webkit-scrollbar { display:none; }
+.step {
+  display:flex; align-items:center; gap:8px; flex-shrink:0;
+  font-size:0.75rem; font-weight:600; letter-spacing:0.07em;
+  text-transform:uppercase; color:var(--muted); transition:color 0.3s;
+  white-space:nowrap;
+}
+.step.active { color:var(--navy); }
+.step.done { color:var(--gold); }
+.step-num {
+  width:30px; height:30px; border-radius:50%;
+  border:2px solid var(--border); background:white; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center;
+  font-size:0.78rem; font-weight:700; color:var(--muted);
+  transition:all 0.3s;
+}
+.step.active .step-num { border-color:var(--navy); background:var(--navy); color:white; }
+.step.done .step-num { border-color:var(--gold); background:var(--gold); color:var(--navy); }
+.step-line {
+  width: clamp(20px,4vw,50px); height:2px;
+  background:var(--border2); margin:0 4px; flex-shrink:0;
+  border-radius:2px; transition:background 0.3s;
+}
+.step-line.on { background:var(--gold); }
 
-/* ── ÉXITO ── */
-.exito { display:none; animation:fadeUp .4s ease both; }
-.exito.activo { display:block; }
-.exito-card { background:white; border:1px solid var(--border); border-radius:16px; padding:4rem 2rem; text-align:center; box-shadow:0 4px 24px rgba(11,30,61,.07); }
-.exito-icono { width:72px; height:72px; border-radius:50%; background:rgba(200,169,110,.12); border:1.5px solid rgba(200,169,110,.4); display:flex; align-items:center; justify-content:center; margin:0 auto 20px; }
-.exito-card h2 { font-family:'Playfair Display',serif; font-size:1.8rem; color:var(--navy); margin-bottom:10px; }
-.exito-card p { color:var(--muted); font-size:.92rem; max-width:400px; margin:0 auto 28px; line-height:1.7; }
-.exito-actions { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
-.btn-factura { display:inline-flex; align-items:center; gap:8px; background:var(--navy); color:white; padding:13px 28px; border-radius:8px; font-size:.84rem; font-weight:600; text-decoration:none; transition:all .2s; letter-spacing:.04em; }
-.btn-factura:hover { background:var(--navy2); transform:translateY(-2px); box-shadow:0 6px 20px rgba(11,30,61,.2); }
-.btn-nueva { display:inline-flex; align-items:center; gap:8px; background:transparent; color:var(--muted); padding:13px 24px; border-radius:8px; font-size:.84rem; font-weight:600; border:1.5px solid var(--border); cursor:pointer; transition:all .2s; font-family:'DM Sans',sans-serif; }
-.btn-nueva:hover { border-color:var(--navy); color:var(--navy); background:white; }
+/* CARD */
+.card {
+  background:var(--white); border:1px solid var(--border);
+  border-radius:var(--radius); padding: clamp(1.4rem,4vw,2.5rem);
+  box-shadow: var(--shadow); margin-bottom:1rem;
+}
+.card h2 {
+  font-family:'Cormorant Garamond', serif;
+  font-size:clamp(1.3rem,3vw,1.7rem);
+  color:var(--navy); font-weight:600; margin-bottom:6px;
+}
+.card .sub { font-size:0.85rem; color:var(--muted); margin-bottom:1.8rem; line-height:1.6; }
 
-/* ── TOAST ── */
-.toast { position:fixed; bottom:28px; left:50%; transform:translateX(-50%) translateY(20px); background:var(--navy); color:white; padding:13px 22px; border-radius:10px; font-size:13px; font-weight:500; display:flex; align-items:center; gap:10px; opacity:0; pointer-events:none; transition:all .3s ease; z-index:9999; border:1px solid rgba(255,255,255,.08); box-shadow:0 12px 40px rgba(11,30,61,.3); }
-.toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
-.toast.err { border-color:rgba(220,80,80,.4); }
+/* GRID OPCIONES */
+.opt-grid {
+  display:grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(240px, 100%), 1fr));
+  gap:0.85rem;
+}
+.opt {
+  border:1.5px solid var(--border2); border-radius:var(--radius-sm);
+  padding:1.3rem 1.2rem; cursor:pointer; transition:all 0.22s;
+  background:var(--cream); position:relative;
+  -webkit-tap-highlight-color: transparent;
+}
+.opt:hover { border-color:rgba(12,31,63,0.25); background:var(--white); transform:translateY(-1px); box-shadow:0 6px 24px rgba(12,31,63,0.07); }
+.opt.sel { border-color:var(--navy); background:var(--white); box-shadow:0 6px 24px rgba(12,31,63,0.1); }
+.opt-check {
+  position:absolute; top:10px; right:10px;
+  width:22px; height:22px; border-radius:50%;
+  background:var(--navy); color:white;
+  font-size:0.68rem; font-weight:800;
+  display:none; align-items:center; justify-content:center;
+}
+.opt.sel .opt-check { display:flex; }
+.opt-icon { margin-bottom:10px; }
+.opt-name { font-size:0.92rem; font-weight:700; color:var(--navy); margin-bottom:4px; }
+.opt-desc { font-size:0.78rem; color:var(--muted); line-height:1.55; }
+.opt-price { font-size:0.78rem; font-weight:700; color:var(--gold); margin-top:9px; }
 
-/* ── FOOTER ── */
-footer { background:var(--navy); padding:2rem 2.5rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; border-top:1px solid rgba(255,255,255,.05); }
-.logo-f { font-family:'Playfair Display',serif; font-size:1.15rem; color:white; text-decoration:none; letter-spacing:.05em; }
-.logo-f em { color:var(--accent); font-style:italic; }
-footer span { font-size:.76rem; color:rgba(255,255,255,.3); }
-.footer-links { display:flex; gap:1.5rem; }
-.footer-links a { font-size:.78rem; color:rgba(255,255,255,.4); text-decoration:none; letter-spacing:.04em; transition:color .2s; }
-.footer-links a:hover { color:var(--accent); }
+/* EXTRAS */
+.extras-grid {
+  display:grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr));
+  gap:0.75rem;
+}
+.extra {
+  display:flex; align-items:center; gap:12px;
+  border:1.5px solid var(--border2); border-radius:var(--radius-sm);
+  padding:1rem 1.1rem; cursor:pointer; transition:all 0.22s;
+  background:var(--cream); -webkit-tap-highlight-color: transparent;
+}
+.extra:hover { border-color:rgba(12,31,63,0.25); background:var(--white); }
+.extra.sel { border-color:var(--gold); background:var(--white); box-shadow:0 4px 16px rgba(201,169,110,0.12); }
+.extra-box {
+  width:22px; height:22px; border-radius:5px; flex-shrink:0;
+  border:2px solid var(--border); background:var(--cream);
+  display:flex; align-items:center; justify-content:center;
+  font-size:0.72rem; color:transparent; font-weight:800;
+  transition:all 0.2s;
+}
+.extra.sel .extra-box { background:var(--gold); border-color:var(--gold); color:var(--navy); }
+.extra-info { flex:1; min-width:0; }
+.extra-info strong { font-size:0.86rem; color:var(--navy); display:block; margin-bottom:2px; }
+.extra-info span { font-size:0.76rem; color:var(--muted); line-height:1.4; }
+.extra-price { font-size:0.8rem; font-weight:700; color:var(--gold); white-space:nowrap; flex-shrink:0; }
 
-/* ── RESPONSIVE ── */
-@media(max-width:900px){ .opciones-grid{grid-template-columns:1fr 1fr;} .plazo-opts{grid-template-columns:1fr 1fr;} }
-@media(max-width:600px){ .extras-grid{grid-template-columns:1fr;} .form-grid{grid-template-columns:1fr;} .opciones-grid{grid-template-columns:1fr;} .cotiz-card{padding:1.5rem;} footer{flex-direction:column;text-align:center;} }
+/* PLAZO */
+.plazo-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(min(140px,100%), 1fr)); gap:0.75rem; }
+.plazo-opt {
+  border:1.5px solid var(--border2); border-radius:var(--radius-sm);
+  padding:1.1rem; cursor:pointer; background:var(--cream);
+  transition:all 0.22s; text-align:center;
+  -webkit-tap-highlight-color: transparent;
+}
+.plazo-opt:hover { border-color:rgba(12,31,63,0.25); background:var(--white); transform:translateY(-1px); }
+.plazo-opt.sel { border-color:var(--navy); background:var(--white); box-shadow:0 4px 16px rgba(12,31,63,0.08); }
+.plazo-opt strong { font-size:0.9rem; font-weight:700; color:var(--navy); display:block; margin-bottom:3px; }
+.plazo-opt span { font-size:0.76rem; color:var(--muted); }
+.plazo-opt .extra-fee { font-size:0.72rem; color:#c0392b; font-weight:700; margin-top:5px; display:block; }
+
+/* RESUMEN */
+.resumen {
+  background:var(--navy); border-radius:var(--radius);
+  padding: clamp(1.4rem,4vw,2.2rem); color:white;
+  margin-bottom:1rem; position:relative; overflow:hidden;
+}
+.resumen::before {
+  content:''; position:absolute; inset:0;
+  background:radial-gradient(ellipse at 15% 50%, rgba(201,169,110,0.10) 0%, transparent 55%);
+  pointer-events:none;
+}
+.resumen-title {
+  font-family:'Cormorant Garamond', serif;
+  font-size:1.3rem; font-weight:600; margin-bottom:1.4rem; position:relative;
+}
+.resumen-list { list-style:none; margin-bottom:1.4rem; position:relative; }
+.resumen-list li {
+  display:flex; justify-content:space-between; align-items:center;
+  padding:0.55rem 0; border-bottom:1px solid rgba(255,255,255,0.07);
+  font-size:0.86rem;
+}
+.resumen-list li:last-child { border:none; }
+.resumen-list li span:first-child { color:rgba(255,255,255,0.58); }
+.resumen-list li span:last-child { font-weight:600; color:white; }
+.resumen-total {
+  display:flex; justify-content:space-between; align-items:center;
+  padding-top:1.1rem; border-top:1px solid rgba(201,169,110,0.25); position:relative;
+}
+.resumen-total span { font-size:0.85rem; color:rgba(255,255,255,0.55); }
+.total-amount {
+  font-family:'Cormorant Garamond', serif;
+  font-size: clamp(1.6rem,4vw,2.2rem); font-weight:700; color:var(--gold);
+}
+
+/* FORM */
+.form-grid {
+  display:grid;
+  grid-template-columns:repeat(auto-fill, minmax(min(220px,100%), 1fr));
+  gap:1rem;
+}
+.form-group { display:flex; flex-direction:column; gap:6px; }
+.form-group.full { grid-column:1/-1; }
+.form-group label {
+  font-size:0.78rem; font-weight:700; color:var(--navy);
+  letter-spacing:0.06em; text-transform:uppercase;
+}
+.form-group input,
+.form-group textarea {
+  border:1.5px solid var(--border); border-radius:8px;
+  padding:12px 14px; font-family:'Outfit',sans-serif;
+  font-size:1rem; color:var(--navy); background:var(--cream);
+  outline:none; transition:border-color 0.2s; width:100%;
+  -webkit-appearance:none; appearance:none;
+}
+.form-group input:focus,
+.form-group textarea:focus { border-color:var(--navy); background:var(--white); }
+.form-group textarea { resize:vertical; min-height:100px; }
+
+/* NAVEGACION BOTONES */
+.nav-btns {
+  display:flex; justify-content:space-between; align-items:center;
+  margin-top:1.4rem; gap:0.75rem;
+}
+.btn-prev {
+  border:1.5px solid var(--border); background:transparent;
+  color:var(--muted); padding:12px clamp(16px,3vw,26px); border-radius:6px;
+  font-family:'Outfit',sans-serif; font-size:0.82rem; font-weight:600;
+  letter-spacing:0.07em; text-transform:uppercase; cursor:pointer;
+  transition:all 0.22s; white-space:nowrap;
+}
+.btn-prev:hover { border-color:var(--navy); color:var(--navy); }
+.btn-next {
+  background:var(--navy); color:white;
+  border:none; padding:13px clamp(20px,3vw,32px); border-radius:6px;
+  font-family:'Outfit',sans-serif; font-size:0.82rem; font-weight:700;
+  letter-spacing:0.1em; text-transform:uppercase; cursor:pointer;
+  transition:all 0.22s; white-space:nowrap;
+}
+.btn-next:hover { background:var(--navy2); transform:translateY(-1px); box-shadow:0 6px 20px rgba(12,31,63,0.2); }
+.btn-next:disabled { opacity:0.6; cursor:not-allowed; transform:none; }
+
+/* PANELS */
+.panel { display:none; }
+.panel.active { display:block; }
+
+/* SUCCESS */
+.success-panel { display:none; animation: fadeUp 0.5s ease; }
+@keyframes fadeUp {
+  from { opacity:0; transform:translateY(16px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+.success-inner {
+  background:var(--white); border-radius:var(--radius);
+  padding: clamp(2rem,6vw,4rem) clamp(1.5rem,5vw,3rem);
+  text-align:center; box-shadow:var(--shadow); border:1px solid var(--border);
+}
+.success-icon {
+  width:72px; height:72px; border-radius:50%;
+  background:rgba(201,169,110,0.12); border:2px solid var(--gold);
+  display:flex; align-items:center; justify-content:center;
+  margin:0 auto 1.5rem;
+}
+.success-inner h2 {
+  font-family:'Cormorant Garamond', serif;
+  font-size:clamp(1.6rem,4vw,2rem); color:var(--navy); margin-bottom:8px;
+}
+.success-inner > p {
+  color:var(--muted); font-size:0.94rem; line-height:1.75;
+  max-width:400px; margin:0 auto 2rem;
+}
+
+/* Botones factura */
+.factura-actions {
+  display:flex; flex-wrap:wrap; gap:0.75rem;
+  justify-content:center; margin-top:1.5rem;
+}
+.btn-factura {
+  display:inline-flex; align-items:center; gap:8px;
+  padding:12px 20px; border-radius:8px;
+  font-family:'Outfit',sans-serif; font-size:0.83rem; font-weight:600;
+  cursor:pointer; transition:all 0.22s; text-decoration:none;
+  letter-spacing:0.04em; border:none;
+}
+.btn-ver { background:var(--navy); color:white; }
+.btn-ver:hover { background:var(--navy2); transform:translateY(-1px); }
+.btn-img { background:var(--gold); color:var(--navy); }
+.btn-img:hover { background:var(--gold2); transform:translateY(-1px); }
+.btn-pdf { background:transparent; color:var(--navy); border:1.5px solid var(--border) !important; }
+.btn-pdf:hover { border-color:var(--navy) !important; }
+.btn-factura:disabled { opacity:0.6; cursor:not-allowed; transform:none !important; }
+
+/* MODAL */
+.modal-overlay {
+  display:none; position:fixed; inset:0; z-index:2000;
+  background:rgba(0,0,0,0.65); backdrop-filter:blur(4px);
+  align-items:flex-start; justify-content:center;
+  padding: 20px 12px; overflow-y:auto;
+}
+.modal-overlay.open { display:flex; }
+.modal-box {
+  background:white; border-radius:16px; width:100%; max-width:560px;
+  overflow:hidden; box-shadow:0 30px 80px rgba(0,0,0,0.3);
+  position:relative; margin:auto;
+}
+.modal-header {
+  display:flex; justify-content:space-between; align-items:center;
+  padding:1rem 1.4rem; border-bottom:1px solid var(--border);
+  background:var(--navy);
+}
+.modal-header h3 {
+  font-family:'Cormorant Garamond',serif; font-size:1.2rem; color:white; font-weight:600;
+}
+.modal-close {
+  background:none; border:none; color:rgba(255,255,255,0.6);
+  font-size:1.5rem; cursor:pointer; line-height:1; padding:2px 6px; transition:color 0.2s;
+}
+.modal-close:hover { color:white; }
+
+/* FOOTER */
+footer {
+  background:var(--navy);
+  padding: 1.8rem clamp(16px,5vw,60px);
+  display:flex; justify-content:space-between; align-items:center;
+  flex-wrap:wrap; gap:1rem;
+  border-top:1px solid rgba(255,255,255,0.05);
+}
+.footer-logo {
+  font-family:'Cormorant Garamond',serif; font-size:1.3rem;
+  color:white; text-decoration:none; font-weight:600; letter-spacing:0.05em;
+}
+footer .copy { font-size:0.76rem; color:rgba(255,255,255,0.3); }
+.footer-links { display:flex; gap:1.2rem; flex-wrap:wrap; }
+.footer-links a {
+  font-size:0.78rem; color:rgba(255,255,255,0.38); text-decoration:none;
+  letter-spacing:0.05em; transition:color 0.2s;
+}
+.footer-links a:hover { color:var(--gold); }
+
+/* MEDIA */
+@media(max-width:768px) {
+  nav { display:none; }
+  .hamburger { display:flex; }
+}
+@media(min-width:769px) {
+  .hamburger { display:none; }
+  .mobile-nav { display:none !important; }
+}
+@media(max-width:460px) {
+  .step span { display:none; }
+  .step-line { width:16px; }
+  footer { flex-direction:column; text-align:center; }
+  .footer-links { justify-content:center; }
+}
 </style>
 </head>
 <body>
 
-<!-- HEADER -->
-<header id="header">
-  <a href="#" class="logo"><em>Agencia</em> Digital</a>
-  <nav id="nav">
-    <a href="#">Inicio</a>
-    <a href="#">Nosotros</a>
-    <a href="#">Servicios</a>
-    <a href="#">Portfolio</a>
-    <a href="#">Contacto</a>
+<header>
+  <a href="home.html" class="logo">/LP/</a>
+  <nav>
+    <a href="home.html">Inicio</a>
+    <a href="about us.html">Nosotros</a>
+    <a href="servicios.html">Servicios</a>
+    <a href="portafolio.html">Portfolio</a>
+    <a href="contacto.html">Contacto</a>
   </nav>
-  <div class="menu-toggle" onclick="document.getElementById('nav').classList.toggle('open')">☰</div>
+  <div class="hamburger" id="ham" onclick="toggleMenu()">
+    <span></span><span></span><span></span>
+  </div>
 </header>
 
-<!-- HERO -->
+<div class="mobile-nav" id="mobileNav">
+  <a href="home.html" onclick="closeMenu()">Inicio</a>
+  <a href="about us.html" onclick="closeMenu()">Nosotros</a>
+  <a href="servicios.html" onclick="closeMenu()">Servicios</a>
+  <a href="portafolio.html" onclick="closeMenu()">Portfolio</a>
+  <a href="contacto.html" onclick="closeMenu()">Contacto</a>
+</div>
+
 <section class="hero">
-  <div style="position:relative;z-index:1">
-    <div class="badge">Cotizador Online</div>
+  <div class="hero-inner">
+    <span class="hero-tag">Cotizador Online</span>
     <h1>¿Cuánto cuesta<br>tu <em>proyecto web?</em></h1>
     <p>Completá el formulario y recibí una estimación al instante. Sin compromiso.</p>
   </div>
 </section>
 
-<!-- COTIZADOR -->
-<div class="cotiz-wrap">
+<div class="wrap">
 
-  <!-- PASOS -->
-  <div class="pasos" id="pasos">
-    <div class="paso activo" id="p1"><div class="paso-num">1</div><span>Tipo de sitio</span></div>
-    <div class="paso-linea" id="l1"></div>
-    <div class="paso" id="p2"><div class="paso-num">2</div><span>Extras</span></div>
-    <div class="paso-linea" id="l2"></div>
-    <div class="paso" id="p3"><div class="paso-num">3</div><span>Plazo</span></div>
-    <div class="paso-linea" id="l3"></div>
-    <div class="paso" id="p4"><div class="paso-num">4</div><span>Tus datos</span></div>
+  <div class="progress-bar" id="progressBar">
+    <div class="step active" id="st1"><div class="step-num">1</div><span>Tipo de sitio</span></div>
+    <div class="step-line" id="sl1"></div>
+    <div class="step" id="st2"><div class="step-num">2</div><span>Extras</span></div>
+    <div class="step-line" id="sl2"></div>
+    <div class="step" id="st3"><div class="step-num">3</div><span>Plazo</span></div>
+    <div class="step-line" id="sl3"></div>
+    <div class="step" id="st4"><div class="step-num">4</div><span>Datos</span></div>
   </div>
 
-  <!-- ══ PANEL 1: TIPO ══ -->
-  <div class="panel activo" id="panel1">
-    <div class="cotiz-card">
+  <!-- PANEL 1 -->
+  <div class="panel active" id="panel1">
+    <div class="card">
       <h2>¿Qué tipo de sitio necesitás?</h2>
       <p class="sub">Seleccioná la opción que mejor describe tu proyecto.</p>
-      <div class="opciones-grid">
-        <div class="opcion" onclick="selOpcion(this,'Landing Page',800)">
-          <div class="op-icono"><svg width="28" height="28" fill="none" stroke="#0b1e3d" stroke-width="1.5" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/></svg></div>
-          <div class="op-nombre">Landing Page</div>
-          <div class="op-desc">Una página de presentación optimizada para convertir visitas en clientes.</div>
-          <div class="op-precio">Desde $800 USD</div>
+      <div class="opt-grid">
+        <div class="opt" onclick="selTipo(this,'Landing Page',800)">
+          <div class="opt-check">✓</div>
+          <div class="opt-icon"><svg width="26" height="26" fill="none" stroke="var(--navy)" stroke-width="1.6" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/></svg></div>
+          <div class="opt-name">Landing Page</div>
+          <div class="opt-desc">Página de presentación optimizada para convertir visitas en clientes.</div>
+          <div class="opt-price">Desde $800 USD</div>
         </div>
-        <div class="opcion" onclick="selOpcion(this,'Sitio Web Institucional',1500)">
-          <div class="op-icono"><svg width="28" height="28" fill="none" stroke="#0b1e3d" stroke-width="1.5" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg></div>
-          <div class="op-nombre">Sitio Web</div>
-          <div class="op-desc">Sitio institucional completo con múltiples páginas, blog y formularios.</div>
-          <div class="op-precio">Desde $1.500 USD</div>
+        <div class="opt" onclick="selTipo(this,'Sitio Web Institucional',1500)">
+          <div class="opt-check">✓</div>
+          <div class="opt-icon"><svg width="26" height="26" fill="none" stroke="var(--navy)" stroke-width="1.6" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg></div>
+          <div class="opt-name">Sitio Web Institucional</div>
+          <div class="opt-desc">Sitio completo con múltiples páginas, blog y formularios de contacto.</div>
+          <div class="opt-price">Desde $1.500 USD</div>
         </div>
-        <div class="opcion" onclick="selOpcion(this,'Tienda Online (E-commerce)',2500)">
-          <div class="op-icono"><svg width="28" height="28" fill="none" stroke="#0b1e3d" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/></svg></div>
-          <div class="op-nombre">Tienda Online</div>
-          <div class="op-desc">E-commerce completo con carrito, pagos y gestión de productos.</div>
-          <div class="op-precio">Desde $2.500 USD</div>
+        <div class="opt" onclick="selTipo(this,'Tienda Online (E-commerce)',2500)">
+          <div class="opt-check">✓</div>
+          <div class="opt-icon"><svg width="26" height="26" fill="none" stroke="var(--navy)" stroke-width="1.6" viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/></svg></div>
+          <div class="opt-name">Tienda Online</div>
+          <div class="opt-desc">E-commerce completo con carrito, pagos y gestión de productos.</div>
+          <div class="opt-price">Desde $2.500 USD</div>
         </div>
-        <div class="opcion" onclick="selOpcion(this,'Biblioteca Digital',2800)">
-          <div class="op-icono"><svg width="28" height="28" fill="none" stroke="#0b1e3d" stroke-width="1.5" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/></svg></div>
-          <div class="op-nombre">Biblioteca Digital</div>
-          <div class="op-desc">Plataforma online para acceder a recursos multimedia sin limitaciones físicas.</div>
-          <div class="op-precio">Desde $2.800 USD</div>
+        <div class="opt" onclick="selTipo(this,'Biblioteca Digital',2800)">
+          <div class="opt-check">✓</div>
+          <div class="opt-icon"><svg width="26" height="26" fill="none" stroke="var(--navy)" stroke-width="1.6" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg></div>
+          <div class="opt-name">Biblioteca Digital</div>
+          <div class="opt-desc">Plataforma para acceder a libros, documentos y recursos multimedia.</div>
+          <div class="opt-price">Desde $2.800 USD</div>
         </div>
-        <div class="opcion" onclick="selOpcion(this,'Web App a Medida',4000)">
-          <div class="op-icono"><svg width="28" height="28" fill="none" stroke="#0b1e3d" stroke-width="1.5" viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></div>
-          <div class="op-nombre">Web App</div>
-          <div class="op-desc">Aplicación web a medida con funcionalidades avanzadas y panel admin.</div>
-          <div class="op-precio">Desde $4.000 USD</div>
+        <div class="opt" onclick="selTipo(this,'Web App a Medida',4000)">
+          <div class="opt-check">✓</div>
+          <div class="opt-icon"><svg width="26" height="26" fill="none" stroke="var(--navy)" stroke-width="1.6" viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></div>
+          <div class="opt-name">Web App</div>
+          <div class="opt-desc">Aplicación web a medida con funcionalidades avanzadas y panel admin.</div>
+          <div class="opt-price">Desde $4.000 USD</div>
         </div>
-        <div class="opcion" onclick="selOpcion(this,'A Presupuestar',0)">
-          <div class="op-icono"><svg width="28" height="28" fill="none" stroke="#0b1e3d" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/></svg></div>
-          <div class="op-nombre">No sé / Consultar</div>
-          <div class="op-desc">Tengo una idea pero no sé bien qué tipo de sitio necesito.</div>
-          <div class="op-precio">A presupuestar</div>
+        <div class="opt" onclick="selTipo(this,'A Presupuestar',0)">
+          <div class="opt-check">✓</div>
+          <div class="opt-icon"><svg width="26" height="26" fill="none" stroke="var(--navy)" stroke-width="1.6" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/></svg></div>
+          <div class="opt-name">No sé / Consultar</div>
+          <div class="opt-desc">Tengo una idea pero no estoy seguro qué tipo de sitio necesito.</div>
+          <div class="opt-price">A presupuestar</div>
         </div>
       </div>
     </div>
-    <div class="nav-pasos">
-      <div></div>
-      <button class="btn-next" onclick="irA(2)"><span class="btxt">Siguiente →</span></button>
-    </div>
+    <div class="nav-btns"><div></div><button class="btn-next" onclick="goTo(2)">Siguiente →</button></div>
   </div>
 
-  <!-- ══ PANEL 2: EXTRAS ══ -->
+  <!-- PANEL 2 -->
   <div class="panel" id="panel2">
-    <div class="cotiz-card">
+    <div class="card">
       <h2>¿Qué extras necesitás?</h2>
-      <p class="sub">Podés seleccionar más de uno. Son opcionales.</p>
+      <p class="sub">Podés seleccionar más de uno. Todos son opcionales.</p>
       <div class="extras-grid">
         <div class="extra" onclick="toggleExtra(this,'SEO Avanzado',300)">
-          <div class="extra-check">✓</div>
-          <div class="extra-txt"><strong>SEO Avanzado</strong><span>Optimización para Google, meta tags y velocidad</span></div>
-          <div class="extra-precio">+$300</div>
+          <div class="extra-box">✓</div>
+          <div class="extra-info"><strong>SEO Avanzado</strong><span>Optimización para Google, meta tags y velocidad de carga</span></div>
+          <div class="extra-price">+$300</div>
         </div>
         <div class="extra" onclick="toggleExtra(this,'Diseño de Marca',400)">
-          <div class="extra-check">✓</div>
-          <div class="extra-txt"><strong>Diseño de Marca</strong><span>Logo, paleta de colores y tipografía</span></div>
-          <div class="extra-precio">+$400</div>
+          <div class="extra-box">✓</div>
+          <div class="extra-info"><strong>Diseño de Marca</strong><span>Logo, paleta de colores y tipografía corporativa</span></div>
+          <div class="extra-price">+$400</div>
         </div>
         <div class="extra" onclick="toggleExtra(this,'Mantenimiento Mensual',150)">
-          <div class="extra-check">✓</div>
-          <div class="extra-txt"><strong>Mantenimiento Mensual</strong><span>Actualizaciones, backup y soporte técnico</span></div>
-          <div class="extra-precio">+$150/mes</div>
+          <div class="extra-box">✓</div>
+          <div class="extra-info"><strong>Mantenimiento Mensual</strong><span>Actualizaciones, backup y soporte técnico</span></div>
+          <div class="extra-price">+$150/mes</div>
         </div>
-        <div class="extra" onclick="toggleExtra(this,'Hosting + Dominio (1 año)',200)">
-          <div class="extra-check">✓</div>
-          <div class="extra-txt"><strong>Hosting + Dominio</strong><span>Servidor rápido y dominio por 1 año</span></div>
-          <div class="extra-precio">+$200/año</div>
+        <div class="extra" onclick="toggleExtra(this,'Hosting + Dominio',200)">
+          <div class="extra-box">✓</div>
+          <div class="extra-info"><strong>Hosting + Dominio</strong><span>Servidor rápido y dominio por 1 año incluido</span></div>
+          <div class="extra-price">+$200/año</div>
         </div>
         <div class="extra" onclick="toggleExtra(this,'Redacción de Contenido',350)">
-          <div class="extra-check">✓</div>
-          <div class="extra-txt"><strong>Redacción de Contenido</strong><span>Textos profesionales para todo el sitio</span></div>
-          <div class="extra-precio">+$350</div>
+          <div class="extra-box">✓</div>
+          <div class="extra-info"><strong>Redacción de Contenido</strong><span>Textos profesionales para todo el sitio</span></div>
+          <div class="extra-price">+$350</div>
         </div>
-        <div class="extra" onclick="toggleExtra(this,'Analytics & Reportes',180)">
-          <div class="extra-check">✓</div>
-          <div class="extra-txt"><strong>Analytics & Reportes</strong><span>Configuración de Google Analytics y reportes</span></div>
-          <div class="extra-precio">+$180</div>
+        <div class="extra" onclick="toggleExtra(this,'Analytics y Reportes',180)">
+          <div class="extra-box">✓</div>
+          <div class="extra-info"><strong>Analytics y Reportes</strong><span>Configuración de Google Analytics y reportes mensuales</span></div>
+          <div class="extra-price">+$180</div>
         </div>
       </div>
     </div>
-    <div class="nav-pasos">
-      <button class="btn-prev" onclick="irA(1)">← Anterior</button>
-      <button class="btn-next" onclick="irA(3)"><span class="btxt">Siguiente →</span></button>
+    <div class="nav-btns">
+      <button class="btn-prev" onclick="goTo(1)">← Anterior</button>
+      <button class="btn-next" onclick="goTo(3)">Siguiente →</button>
     </div>
   </div>
 
-  <!-- ══ PANEL 3: PLAZO ══ -->
+  <!-- PANEL 3 -->
   <div class="panel" id="panel3">
-    <div class="cotiz-card">
+    <div class="card">
       <h2>¿En cuánto tiempo lo necesitás?</h2>
       <p class="sub">El plazo puede afectar el precio final del proyecto.</p>
-      <div class="plazo-opts">
-        <div class="plazo-opt" onclick="selPlazo(this,'Sin apuro (más de 2 meses)',0)">
+      <div class="plazo-grid">
+        <div class="plazo-opt" onclick="selPlazo(this,'Sin apuro (2+ meses)',0)">
           <strong>Sin apuro</strong><span>Más de 2 meses</span>
         </div>
-        <div class="plazo-opt" onclick="selPlazo(this,'Normal (4 a 8 semanas)',0)">
+        <div class="plazo-opt" onclick="selPlazo(this,'Normal (4–8 semanas)',0)">
           <strong>Normal</strong><span>4 a 8 semanas</span>
         </div>
-        <div class="plazo-opt" onclick="selPlazo(this,'Rápido (2 a 4 semanas)',200)">
-          <strong>Rápido</strong><span>2 a 4 semanas</span><span class="urgente">+$200</span>
+        <div class="plazo-opt" onclick="selPlazo(this,'Rápido (2–4 semanas)',200)">
+          <strong>Rápido</strong><span>2 a 4 semanas</span><span class="extra-fee">+$200</span>
         </div>
         <div class="plazo-opt" onclick="selPlazo(this,'Urgente (menos de 2 semanas)',500)">
-          <strong>Urgente</strong><span>Menos de 2 semanas</span><span class="urgente">+$500</span>
+          <strong>Urgente</strong><span>Menos de 2 semanas</span><span class="extra-fee">+$500</span>
         </div>
       </div>
     </div>
-    <div class="nav-pasos">
-      <button class="btn-prev" onclick="irA(2)">← Anterior</button>
-      <button class="btn-next" onclick="irA(4)"><span class="btxt">Ver resumen →</span></button>
+    <div class="nav-btns">
+      <button class="btn-prev" onclick="goTo(2)">← Anterior</button>
+      <button class="btn-next" onclick="goTo(4)">Ver resumen →</button>
     </div>
   </div>
 
-  <!-- ══ PANEL 4: DATOS + RESUMEN ══ -->
+  <!-- PANEL 4 -->
   <div class="panel" id="panel4">
-
-    <div class="resumen-card" id="resumen">
-      <div class="resumen-titulo">Resumen de tu proyecto</div>
-      <ul class="resumen-items" id="resumen-lista"></ul>
+    <div class="resumen">
+      <div class="resumen-title">Resumen de tu proyecto</div>
+      <ul class="resumen-list" id="resumen-lista"></ul>
       <div class="resumen-total">
-        <span class="t-label">Estimación total</span>
-        <span class="t-amount" id="total-num">$0 USD</span>
+        <span>Estimación total</span>
+        <span class="total-amount" id="total-num">$0 USD</span>
       </div>
     </div>
-
-    <div class="cotiz-card">
+    <div class="card">
       <h2>Tus datos</h2>
-      <p class="sub">Completá tus datos para generar la cotización y factura.</p>
+      <p class="sub">Te contactamos en menos de 24hs con una propuesta detallada.</p>
       <div class="form-grid">
         <div class="form-group">
-          <label>Nombre completo *</label>
-          <input type="text" id="f-nombre" placeholder="Juan Pérez">
+          <label>Nombre *</label>
+          <input type="text" id="f-nombre" placeholder="Tu nombre completo" autocomplete="name">
         </div>
         <div class="form-group">
           <label>Email *</label>
-          <input type="email" id="f-email" placeholder="juan@email.com">
+          <input type="email" id="f-email" placeholder="tu@email.com" autocomplete="email">
         </div>
         <div class="form-group">
-          <label>WhatsApp / Teléfono</label>
-          <input type="tel" id="f-tel" placeholder="+1 809 000 0000">
+          <label>WhatsApp</label>
+          <input type="tel" id="f-tel" placeholder="+1 809 000 0000" autocomplete="tel">
         </div>
         <div class="form-group">
           <label>Empresa / Negocio</label>
-          <input type="text" id="f-empresa" placeholder="Nombre de tu empresa">
+          <input type="text" id="f-empresa" placeholder="Nombre de tu empresa" autocomplete="organization">
         </div>
         <div class="form-group full">
-          <label>Contanos más sobre tu proyecto</label>
+          <label>Contanos sobre tu proyecto</label>
           <textarea id="f-mensaje" placeholder="¿Qué tenés en mente? Cuantos más detalles, mejor..."></textarea>
         </div>
       </div>
     </div>
-
-    <div class="nav-pasos">
-      <button class="btn-prev" onclick="irA(3)">← Anterior</button>
-      <button class="btn-next" id="btnEnviar" onclick="enviar()">
-        <div class="spinner-b"></div>
-        <span class="btxt">Enviar y ver factura →</span>
-      </button>
+    <div class="nav-btns">
+      <button class="btn-prev" onclick="goTo(3)">← Anterior</button>
+      <button class="btn-next" id="btn-enviar" onclick="enviar()">Enviar cotización →</button>
     </div>
   </div>
 
-  <!-- ══ ÉXITO ══ -->
-  <div class="exito" id="exito">
-    <div class="exito-card">
-      <div class="exito-icono">
-        <svg width="32" height="32" fill="none" stroke="#c8a96e" stroke-width="1.5" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+  <!-- SUCCESS -->
+  <div class="success-panel" id="successPanel">
+    <div class="success-inner">
+      <div class="success-icon">
+        <svg width="32" height="32" fill="none" stroke="var(--gold)" stroke-width="1.5" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
       </div>
-      <h2>¡Cotización generada!</h2>
-      <p>Tu cotización fue enviada por email y tu factura está lista para descargar.</p>
-      <div class="exito-actions">
-        <a href="factura.html" class="btn-factura" target="_blank">
-          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-          Ver Factura
-        </a>
-        <button class="btn-nueva" onclick="reiniciar()">Nueva cotización</button>
+      <h2>¡Cotización enviada!</h2>
+      <p>Recibimos tu consulta. Te contactamos en menos de 24 horas con una propuesta personalizada.</p>
+
+      <div class="factura-actions">
+        <button class="btn-factura btn-ver" onclick="abrirFactura()">
+          <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          Ver factura
+        </button>
+        <button class="btn-factura btn-img" id="btnImg" onclick="descargarImagen(this)">
+          <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          Descargar imagen
+        </button>
+        <button class="btn-factura btn-pdf" id="btnPdf" onclick="descargarPDF(this)">
+          <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+          Descargar PDF
+        </button>
+      </div>
+
+      <div style="margin-top:2rem;">
+        <a href="home.html" class="btn-next" style="display:inline-block;text-decoration:none;padding:12px 28px;font-size:0.82rem;">Volver al inicio</a>
       </div>
     </div>
   </div>
 
-</div><!-- /cotiz-wrap -->
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="facturaModal" onclick="cerrarModal(event)">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3>Vista previa — Cotización</h3>
+      <button class="modal-close" onclick="document.getElementById('facturaModal').classList.remove('open')">×</button>
+    </div>
+    <div id="modal-body" style="overflow:auto;"></div>
+  </div>
+</div>
 
 <footer>
-  <a href="#" class="logo-f"><em>Agencia</em> Digital</a>
-  <span>© 2025 · Todos los derechos reservados</span>
+  <a href="index.html" class="footer-logo">/LP/</a>
+  <span class="copy">© 2026 Unique Service</span>
   <div class="footer-links">
-    <a href="#">Nosotros</a>
-    <a href="#">Servicios</a>
-    <a href="#">Portfolio</a>
-    <a href="#">Contacto</a>
+    <a href="about us.html">Nosotros</a>
+    <a href="servicios.html">Servicios</a>
+    <a href="portafolio.html">Portfolio</a>
+    <a href="contacto.html">Contacto</a>
   </div>
 </footer>
 
-<div class="toast" id="toast"></div>
-
 <script>
-emailjs.init('I80DpMbblVg35xwzH');
-
-/* ── ESTADO ── */
 const estado = {
-  tipo: null, tipoPrecio: 0,
-  extras: [], extrasPrecio: 0,
-  plazo: null, plazoPrecio: 0
+  tipo:'', tipoPrecio:0,
+  extras:[], extrasTotal:0,
+  plazo:'', plazoPrecio:0
 };
 
-/* ── HEADER SCROLL ── */
-let lastScroll = 0;
-window.addEventListener('scroll', () => {
-  const cur = window.scrollY;
-  document.getElementById('header').classList.toggle('hidden', cur > lastScroll && cur > 80);
-  lastScroll = cur;
-});
+function toggleMenu(){
+  document.getElementById('mobileNav').classList.toggle('open');
+}
+function closeMenu(){
+  document.getElementById('mobileNav').classList.remove('open');
+}
 
-/* ── SELECCIÓN TIPO ── */
-function selOpcion(el, nombre, precio) {
-  document.querySelectorAll('.opcion').forEach(o => o.classList.remove('sel'));
+function selTipo(el, nombre, precio){
+  document.querySelectorAll('.opt').forEach(o => o.classList.remove('sel'));
   el.classList.add('sel');
-  estado.tipo = nombre;
-  estado.tipoPrecio = precio;
+  estado.tipo = nombre; estado.tipoPrecio = precio;
 }
 
-/* ── EXTRAS ── */
-function toggleExtra(el, nombre, precio) {
+function toggleExtra(el, nombre, precio){
   el.classList.toggle('sel');
-  if (el.classList.contains('sel')) {
-    estado.extras.push({ nombre, precio });
-    estado.extrasPrecio += precio;
-  } else {
-    estado.extras = estado.extras.filter(e => e.nombre !== nombre);
-    estado.extrasPrecio -= precio;
-  }
+  const idx = estado.extras.findIndex(e => e.nombre === nombre);
+  if(idx > -1) estado.extras.splice(idx,1);
+  else estado.extras.push({nombre, precio});
+  estado.extrasTotal = estado.extras.reduce((a,e)=>a+e.precio, 0);
 }
 
-/* ── PLAZO ── */
-function selPlazo(el, nombre, precio) {
+function selPlazo(el, nombre, precio){
   document.querySelectorAll('.plazo-opt').forEach(o => o.classList.remove('sel'));
   el.classList.add('sel');
-  estado.plazo = nombre;
-  estado.plazoPrecio = precio;
+  estado.plazo = nombre; estado.plazoPrecio = precio;
 }
 
-/* ── NAVEGACIÓN ── */
-function irA(num) {
-  if (num === 4) actualizarResumen();
-  document.querySelectorAll('.panel').forEach(p => p.classList.remove('activo'));
-  document.getElementById('panel' + num).classList.add('activo');
-  actualizarPasos(num);
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+function goTo(step){
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  const p = document.getElementById('panel'+step);
+  if(p) p.classList.add('active');
+  document.querySelectorAll('.step').forEach((s,i)=>{
+    s.classList.remove('active','done');
+    if(i < step-1) s.classList.add('done');
+    else if(i === step-1) s.classList.add('active');
+  });
+  document.querySelectorAll('.step-line').forEach((l,i)=>{
+    l.classList.toggle('on', i < step-1);
+  });
+  if(step===4) actualizarResumen();
+  window.scrollTo({top:0,behavior:'smooth'});
 }
 
-function actualizarPasos(actual) {
-  for (let i = 1; i <= 4; i++) {
-    const p = document.getElementById('p' + i);
-    p.classList.remove('activo','completado');
-    if (i < actual) p.classList.add('completado');
-    if (i === actual) p.classList.add('activo');
-    if (i < 4) document.getElementById('l' + i).classList.toggle('on', i < actual);
-  }
-}
-
-/* ── RESUMEN ── */
-function actualizarResumen() {
+function actualizarResumen(){
   const lista = document.getElementById('resumen-lista');
-  const total = estado.tipoPrecio + estado.extrasPrecio + estado.plazoPrecio;
-  let html = '';
-  if (estado.tipo) html += `<li><span class="r-label">${estado.tipo}</span><span class="r-val">$${estado.tipoPrecio.toLocaleString()}</span></li>`;
-  estado.extras.forEach(e => {
-    html += `<li><span class="r-label">${e.nombre}</span><span class="r-val">+$${e.precio.toLocaleString()}</span></li>`;
-  });
-  if (estado.plazoPrecio > 0) html += `<li><span class="r-label">Recargo urgencia (${estado.plazo})</span><span class="r-val">+$${estado.plazoPrecio.toLocaleString()}</span></li>`;
-  lista.innerHTML = html || '<li><span class="r-label">Sin selección aún</span><span class="r-val">—</span></li>';
-  document.getElementById('total-num').textContent = total > 0 ? '$' + total.toLocaleString() + ' USD' : 'A presupuestar';
-}
-
-/* ── ENVIAR ── */
-async function enviar() {
-  const nombre  = document.getElementById('f-nombre').value.trim();
-  const email   = document.getElementById('f-email').value.trim();
-  const tel     = document.getElementById('f-tel').value.trim();
-  const empresa = document.getElementById('f-empresa').value.trim();
-  const mensaje = document.getElementById('f-mensaje').value.trim();
-
-  // Validación
-  let ok = true;
-  ['f-nombre','f-email'].forEach(id => {
-    const el = document.getElementById(id);
-    el.classList.remove('err');
-    if (!el.value.trim()) { el.classList.add('err'); ok = false; }
-  });
-  if (!ok) { toast('Completá tu nombre y email para continuar.', true); return; }
-  const emailRx = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRx.test(email)) { document.getElementById('f-email').classList.add('err'); toast('Email inválido.', true); return; }
-  if (!estado.tipo) { toast('Seleccioná un tipo de sitio en el Paso 1.', true); return; }
-
-  const btn = document.getElementById('btnEnviar');
-  btn.classList.add('loading');
-  btn.disabled = true;
-
-  const total     = estado.tipoPrecio + estado.extrasPrecio + estado.plazoPrecio;
-  const extrasStr = estado.extras.length ? estado.extras.map(e => `${e.nombre} (+$${e.precio})`).join(', ') : 'Ninguno';
-  const plazoStr  = estado.plazo || 'No especificado';
-
-  /* ── Guardar en localStorage para la factura ── */
-  const cotizData = {
-    cliente: { nombre, email, tel, empresa, mensaje },
-    proyecto: {
-      tipo: estado.tipo, tipoPrecio: estado.tipoPrecio,
-      extras: estado.extras,
-      plazo: estado.plazo, plazoPrecio: estado.plazoPrecio,
-      total
-    },
-    fecha: new Date().toISOString(),
-    numero: 'COT-' + Date.now().toString().slice(-6)
-  };
-  localStorage.setItem('agencia_cotizacion', JSON.stringify(cotizData));
-
-  /* ── EmailJS ── */
-  try {
-    await emailjs.send('service_atpwhcf', 'template_xxx1i9b', {
-      nombre, correo: email, telefono: tel || 'No proporcionado',
-      plan: estado.tipo + ' ($' + estado.tipoPrecio + ')',
-      extras: extrasStr, total: '$' + total.toLocaleString() + ' USD',
-      descripcion: mensaje || 'Sin descripción adicional.',
-      plazo: plazoStr
-    });
-  } catch(e) {
-    console.warn('EmailJS:', e);
-    // Continuamos igual — la factura igual se genera
+  lista.innerHTML = '';
+  if(estado.tipo){
+    const li = document.createElement('li');
+    li.innerHTML = `<span>${estado.tipo}</span><span>${estado.tipoPrecio>0?'$'+estado.tipoPrecio.toLocaleString()+' USD':'A presupuestar'}</span>`;
+    lista.appendChild(li);
   }
-
-  btn.classList.remove('loading');
-  btn.disabled = false;
-
-  // Mostrar éxito
-  document.querySelectorAll('.panel').forEach(p => p.classList.remove('activo'));
-  document.getElementById('pasos').style.display = 'none';
-  document.getElementById('exito').classList.add('activo');
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  estado.extras.forEach(e=>{
+    const li = document.createElement('li');
+    li.innerHTML = `<span>${e.nombre}</span><span>+$${e.precio.toLocaleString()} USD</span>`;
+    lista.appendChild(li);
+  });
+  if(estado.plazo){
+    const li = document.createElement('li');
+    li.innerHTML = `<span>Plazo: ${estado.plazo}</span><span>${estado.plazoPrecio>0?'+$'+estado.plazoPrecio.toLocaleString()+' USD':'Sin recargo'}</span>`;
+    lista.appendChild(li);
+  }
+  const total = estado.tipoPrecio + estado.extrasTotal + estado.plazoPrecio;
+  document.getElementById('total-num').textContent = '$'+total.toLocaleString()+' USD';
 }
 
-/* ── REINICIAR ── */
-function reiniciar() {
-  location.reload();
+function enviar(){
+  const nombre = document.getElementById('f-nombre').value.trim();
+  const email  = document.getElementById('f-email').value.trim();
+  if(!nombre){ alert('Por favor, ingresá tu nombre.'); return; }
+  if(!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ alert('Por favor, ingresá un email válido.'); return; }
+  if(!estado.tipo){ alert('Por favor, seleccioná un tipo de sitio en el paso 1.'); return; }
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('progressBar').style.opacity='0.4';
+  document.getElementById('successPanel').style.display='block';
+  window.scrollTo({top:0,behavior:'smooth'});
 }
 
-/* ── TOAST ── */
-let toastT = null;
-function toast(msg, isErr = false) {
-  const el = document.getElementById('toast');
-  el.textContent = msg;
-  el.className = 'toast show' + (isErr ? ' err' : '');
-  if (toastT) clearTimeout(toastT);
-  toastT = setTimeout(() => el.classList.remove('show'), 4000);
+function buildFacturaHTML(){
+  const nombre  = document.getElementById('f-nombre').value.trim()||'Cliente';
+  const email   = document.getElementById('f-email').value.trim()||'';
+  const empresa = document.getElementById('f-empresa').value.trim()||'';
+  const tel     = document.getElementById('f-tel').value.trim()||'';
+  const total   = estado.tipoPrecio+estado.extrasTotal+estado.plazoPrecio;
+  const num     = 'COT-'+Date.now().toString().slice(-6);
+  const fecha   = new Date().toLocaleDateString('es',{day:'2-digit',month:'long',year:'numeric'});
+
+  let filas = '';
+  if(estado.tipo) filas += `<tr><td style="padding:9px 8px;border-bottom:1px solid #eee;font-size:0.88rem;color:#0c1f3f;">${estado.tipo}</td><td style="padding:9px 8px;border-bottom:1px solid #eee;text-align:right;font-weight:600;font-size:0.88rem;color:#0c1f3f;">${estado.tipoPrecio>0?'$'+estado.tipoPrecio.toLocaleString()+' USD':'A presupuestar'}</td></tr>`;
+  estado.extras.forEach(e=>{ filas += `<tr><td style="padding:9px 8px;border-bottom:1px solid #eee;font-size:0.88rem;color:#0c1f3f;">${e.nombre}</td><td style="padding:9px 8px;border-bottom:1px solid #eee;text-align:right;font-weight:600;font-size:0.88rem;color:#0c1f3f;">+$${e.precio.toLocaleString()} USD</td></tr>`; });
+  if(estado.plazo&&estado.plazoPrecio>0) filas += `<tr><td style="padding:9px 8px;font-size:0.88rem;color:#0c1f3f;">Urgencia: ${estado.plazo}</td><td style="padding:9px 8px;text-align:right;font-weight:600;font-size:0.88rem;color:#0c1f3f;">+$${estado.plazoPrecio.toLocaleString()} USD</td></tr>`;
+
+  return `<div style="background:#fff;font-family:'Outfit',sans-serif;width:100%;">
+    <div style="background:#0c1f3f;padding:1.8rem 2rem 1.4rem;display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:1rem;">
+      <div>
+        <div style="font-family:'Cormorant Garamond',serif;font-size:1.9rem;color:#fff;font-weight:700;letter-spacing:0.06em;">/LP/</div>
+        <div style="font-size:0.68rem;color:rgba(255,255,255,0.4);letter-spacing:0.12em;text-transform:uppercase;margin-top:3px;">Unique Service</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-family:'Cormorant Garamond',serif;font-size:1.4rem;color:#c9a96e;font-weight:700;">${num}</div>
+        <div style="font-size:0.76rem;color:rgba(255,255,255,0.4);margin-top:4px;">${fecha}</div>
+        <div style="font-size:0.68rem;color:rgba(255,255,255,0.28);margin-top:2px;text-transform:uppercase;letter-spacing:0.08em;">Cotización</div>
+      </div>
+    </div>
+    <div style="padding:1.6rem 2rem;">
+      <div style="margin-bottom:1.6rem;">
+        <div style="font-size:0.68rem;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#7a7468;margin-bottom:7px;padding-bottom:5px;border-bottom:1px solid rgba(12,31,63,0.1);">Cliente</div>
+        <div style="font-size:1rem;font-weight:700;color:#0c1f3f;">${nombre}${empresa?' — '+empresa:''}</div>
+        <div style="font-size:0.82rem;color:#7a7468;margin-top:3px;line-height:1.7;">${email}${tel?' · '+tel:''}</div>
+      </div>
+      <div style="font-size:0.68rem;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#7a7468;margin-bottom:7px;padding-bottom:5px;border-bottom:1px solid rgba(12,31,63,0.1);">Detalle del proyecto</div>
+      <table style="width:100%;border-collapse:collapse;margin-bottom:1.4rem;">
+        <thead><tr>
+          <th style="text-align:left;font-size:0.7rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#7a7468;padding:7px 8px;background:#f4f3ef;border-bottom:2px solid rgba(12,31,63,0.1);">Servicio / Extra</th>
+          <th style="text-align:right;font-size:0.7rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#7a7468;padding:7px 8px;background:#f4f3ef;border-bottom:2px solid rgba(12,31,63,0.1);">Precio</th>
+        </tr></thead>
+        <tbody>${filas}</tbody>
+      </table>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:1rem 1.3rem;background:#0c1f3f;border-radius:10px;margin-bottom:1.4rem;">
+        <span style="font-size:0.82rem;color:rgba(255,255,255,0.5);">Estimación total del proyecto</span>
+        <span style="font-family:'Cormorant Garamond',serif;font-size:1.9rem;font-weight:700;color:#c9a96e;">$${total.toLocaleString()} USD</span>
+      </div>
+      <div style="background:#f4f3ef;padding:0.85rem 1.1rem;border-radius:8px;font-size:0.76rem;color:#7a7468;line-height:1.7;">
+        <strong style="color:#0c1f3f;">Nota:</strong> Esta es una estimación inicial. El precio final puede variar según los requerimientos específicos. Válida por 30 días.
+      </div>
+    </div>
+    <div style="background:#f4f3ef;padding:0.85rem 2rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem;border-top:1px solid rgba(12,31,63,0.08);">
+      <span style="font-size:0.74rem;color:#7a7468;"><strong style="color:#0c1f3f;">/LP/</strong> — Unique Service</span>
+      <span style="font-size:0.74rem;color:#7a7468;">${fecha}</span>
+    </div>
+  </div>`;
+}
+
+function abrirFactura(){
+  document.getElementById('modal-body').innerHTML = buildFacturaHTML();
+  document.getElementById('facturaModal').classList.add('open');
+}
+
+function cerrarModal(e){
+  if(e.target.id==='facturaModal') document.getElementById('facturaModal').classList.remove('open');
+}
+
+async function renderFactura(){
+  const tmp = document.createElement('div');
+  tmp.style.cssText = 'position:fixed;left:-9999px;top:0;width:560px;z-index:-999;background:#fff;';
+  tmp.innerHTML = buildFacturaHTML();
+  document.body.appendChild(tmp);
+  await document.fonts.ready;
+  const canvas = await html2canvas(tmp.firstElementChild,{scale:2,useCORS:true,backgroundColor:'#ffffff',width:560});
+  document.body.removeChild(tmp);
+  return canvas;
+}
+
+async function descargarImagen(btn){
+  const orig = btn.innerHTML;
+  btn.textContent = 'Generando...'; btn.disabled=true;
+  try{
+    const canvas = await renderFactura();
+    const a = document.createElement('a');
+    a.download='cotizacion-lp.png';
+    a.href=canvas.toDataURL('image/png');
+    a.click();
+  } catch(e){ alert('Error al generar la imagen.'); }
+  btn.innerHTML=orig; btn.disabled=false;
+}
+
+async function descargarPDF(btn){
+  const orig = btn.innerHTML;
+  btn.textContent = 'Generando...'; btn.disabled=true;
+  try{
+    const canvas = await renderFactura();
+    const {jsPDF} = window.jspdf;
+    const imgData = canvas.toDataURL('image/png');
+    const ratio = canvas.height/canvas.width;
+    const pdfW = 210;
+    const pdfH = pdfW*ratio;
+    const pdf = new jsPDF({orientation:'portrait',unit:'mm',format:[pdfW,pdfH]});
+    pdf.addImage(imgData,'PNG',0,0,pdfW,pdfH);
+    pdf.save('cotizacion-lp.pdf');
+  } catch(e){ alert('Error al generar el PDF.'); }
+  btn.innerHTML=orig; btn.disabled=false;
 }
 </script>
 </body>
